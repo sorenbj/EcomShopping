@@ -2,6 +2,8 @@
 @using EcomShopping.Application.DTOs
 @using EcomShopping.Web.Services
 @inject ProductApiService ProductApi
+@inject CartApiService CartApi
+@inject SessionService SessionService
 @inject NavigationManager NavigationManager
 @inject ILogger<ProductDetail> Logger
 @rendermode InteractiveServer
@@ -168,8 +170,25 @@
                     <div class="d-grid gap-2">
                         @if (product.StockQuantity > 0 && product.IsActive)
                         {
-                            <button class="btn btn-primary btn-lg" @onclick="AddToCart">
-                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            <div class="input-group mb-3">
+                                <button class="btn btn-outline-secondary" type="button" @onclick="DecreaseQuantity">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                                <input type="number" class="form-control text-center" @bind="quantity" min="1" max="@product.StockQuantity">
+                                <button class="btn btn-outline-secondary" type="button" @onclick="IncreaseQuantity">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                            <button class="btn btn-primary btn-lg" @onclick="AddToCart" disabled="@addingToCart">
+                                @if (addingToCart)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>Adding...</span>
+                                }
+                                else
+                                {
+                                    <span><i class="bi bi-cart-plus"></i> Add to Cart</span>
+                                }
                             </button>
                         }
                         else
@@ -186,7 +205,18 @@
                     @if (showAddedMessage)
                     {
                         <div class="alert alert-success mt-3" role="alert">
-                            Product added to cart! (Cart functionality coming soon)
+                            <i class="bi bi-check-circle"></i> Product added to cart!
+                            <div class="mt-2">
+                                <a href="/cart" class="btn btn-sm btn-success me-2">View Cart</a>
+                                <a href="/products" class="btn btn-sm btn-outline-success">Continue Shopping</a>
+                            </div>
+                        </div>
+                    }
+
+                    @if (addToCartError != null)
+                    {
+                        <div class="alert alert-danger mt-3" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> @addToCartError
                         </div>
                     }
                 </div>
@@ -266,6 +296,9 @@
     private bool loading = true;
     private string? errorMessage;
     private bool showAddedMessage = false;
+    private bool addingToCart = false;
+    private string? addToCartError;
+    private int quantity = 1;
 
     protected override async Task OnInitializedAsync()
     {
@@ -282,6 +315,7 @@
         loading = true;
         errorMessage = null;
         product = null;
+        quantity = 1;
 
         try
         {
@@ -303,15 +337,74 @@
         }
     }
 
+    private void IncreaseQuantity()
+    {
+        if (product != null && quantity < product.StockQuantity)
+        {
+            quantity++;
+        }
+    }
+
+    private void DecreaseQuantity()
+    {
+        if (quantity > 1)
+        {
+            quantity--;
+        }
+    }
+
     private async Task AddToCart()
     {
-        // Placeholder for cart functionality
-        showAddedMessage = true;
-        StateHasChanged();
-        
-        // Hide message after 3 seconds
-        await Task.Delay(3000);
+        if (product == null) return;
+
+        addingToCart = true;
+        addToCartError = null;
         showAddedMessage = false;
-        StateHasChanged();
+
+        try
+        {
+            var sessionId = SessionService.GetSessionId();
+            var userId = SessionService.GetUserId();
+
+            var request = new AddToCartRequest
+            {
+                SessionId = sessionId,
+                UserId = userId,
+                ProductId = product.Id,
+                Quantity = quantity
+            };
+
+            var cart = await CartApi.AddToCartAsync(request);
+
+            if (cart != null)
+            {
+                showAddedMessage = true;
+                quantity = 1; // Reset quantity after successful add
+                StateHasChanged();
+                
+                // Hide success message after 5 seconds
+                await Task.Delay(5000);
+                showAddedMessage = false;
+                StateHasChanged();
+            }
+            else
+            {
+                addToCartError = "Failed to add item to cart. Please try again.";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            addToCartError = "Network error. Please check your connection and try again.";
+            Logger.LogError(ex, "Network error adding product to cart");
+        }
+        catch (Exception ex)
+        {
+            addToCartError = $"Error adding to cart: {ex.Message}";
+            Logger.LogError(ex, "Error adding product {ProductId} to cart", product.Id);
+        }
+        finally
+        {
+            addingToCart = false;
+        }
     }
 }

@@ -1,0 +1,412 @@
+@page "/checkout"
+@using EcomShopping.Application.DTOs
+@using EcomShopping.Web.Services
+@inject CartApiService CartApi
+@inject CheckoutApiService CheckoutApi
+@inject SessionService SessionService
+@inject NavigationManager NavigationManager
+@inject ILogger<Checkout> Logger
+@rendermode InteractiveServer
+
+<PageTitle>Checkout - EcomShopping</PageTitle>
+
+<div class="container py-4">
+    <h1 class="mb-4">Checkout</h1>
+
+    @if (loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading checkout...</p>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error</h4>
+            <p>@errorMessage</p>
+            <a href="/cart" class="btn btn-primary">Back to Cart</a>
+        </div>
+    }
+    else if (cart == null || !cart.Items.Any())
+    {
+        <div class="alert alert-warning text-center py-5" role="alert">
+            <h3 class="alert-heading">Your cart is empty</h3>
+            <p class="mb-4">You need items in your cart before you can checkout.</p>
+            <a href="/products" class="btn btn-primary btn-lg">
+                <i class="bi bi-shop"></i> Continue Shopping
+            </a>
+        </div>
+    }
+    else if (orderCompleted && completedOrder != null)
+    {
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+            </div>
+            <h2 class="text-success mb-3">Order Placed Successfully!</h2>
+            <p class="lead">Thank you for your order!</p>
+            <div class="card mx-auto" style="max-width: 600px;">
+                <div class="card-body">
+                    <h5 class="card-title">Order Details</h5>
+                    <p><strong>Order Number:</strong> @completedOrder.OrderNumber</p>
+                    <p><strong>Total Amount:</strong> @completedOrder.TotalAmount.ToString("C")</p>
+                    <p><strong>Status:</strong> @completedOrder.Status</p>
+                    <p class="text-muted">You will receive an order confirmation email shortly.</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="/products" class="btn btn-primary">Continue Shopping</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <!-- Checkout Form -->
+            <div class="col-lg-8 mb-4">
+                <!-- Shipping Information -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">1. Shipping Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="shippingFirstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="shippingFirstName" 
+                                       @bind="shippingAddress.FirstName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="shippingLastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="shippingLastName" 
+                                       @bind="shippingAddress.LastName" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shippingStreet" class="form-label">Street Address *</label>
+                            <input type="text" class="form-control" id="shippingStreet" 
+                                   @bind="shippingAddress.Street" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="shippingCity" class="form-label">City *</label>
+                                <input type="text" class="form-control" id="shippingCity" 
+                                       @bind="shippingAddress.City" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="shippingState" class="form-label">State *</label>
+                                <input type="text" class="form-control" id="shippingState" 
+                                       @bind="shippingAddress.State" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="shippingPostalCode" class="form-label">Postal Code *</label>
+                                <input type="text" class="form-control" id="shippingPostalCode" 
+                                       @bind="shippingAddress.PostalCode" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="shippingCountry" class="form-label">Country *</label>
+                                <input type="text" class="form-control" id="shippingCountry" 
+                                       @bind="shippingAddress.Country" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="shippingPhone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="shippingPhone" 
+                                       @bind="shippingAddress.Phone">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Billing Information -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">2. Billing Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="sameAsShipping" 
+                                   @bind="useSameAddressForBilling">
+                            <label class="form-check-label" for="sameAsShipping">
+                                Same as shipping address
+                            </label>
+                        </div>
+
+                        @if (!useSameAddressForBilling)
+                        {
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="billingFirstName" class="form-label">First Name *</label>
+                                    <input type="text" class="form-control" id="billingFirstName" 
+                                           @bind="billingAddress.FirstName" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="billingLastName" class="form-label">Last Name *</label>
+                                    <input type="text" class="form-control" id="billingLastName" 
+                                           @bind="billingAddress.LastName" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="billingStreet" class="form-label">Street Address *</label>
+                                <input type="text" class="form-control" id="billingStreet" 
+                                       @bind="billingAddress.Street" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="billingCity" class="form-label">City *</label>
+                                    <input type="text" class="form-control" id="billingCity" 
+                                           @bind="billingAddress.City" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="billingState" class="form-label">State *</label>
+                                    <input type="text" class="form-control" id="billingState" 
+                                           @bind="billingAddress.State" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="billingPostalCode" class="form-label">Postal Code *</label>
+                                    <input type="text" class="form-control" id="billingPostalCode" 
+                                           @bind="billingAddress.PostalCode" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="billingCountry" class="form-label">Country *</label>
+                                    <input type="text" class="form-control" id="billingCountry" 
+                                           @bind="billingAddress.Country" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="billingPhone" class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" id="billingPhone" 
+                                           @bind="billingAddress.Phone">
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">3. Payment Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method *</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentMethod" 
+                                       id="creditCard" value="CreditCard" 
+                                       checked="@(paymentMethod == "CreditCard")"
+                                       @onchange="@(() => paymentMethod = "CreditCard")">
+                                <label class="form-check-label" for="creditCard">
+                                    <i class="bi bi-credit-card"></i> Credit Card
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentMethod" 
+                                       id="paypal" value="PayPal" 
+                                       checked="@(paymentMethod == "PayPal")"
+                                       @onchange="@(() => paymentMethod = "PayPal")">
+                                <label class="form-check-label" for="paypal">
+                                    <i class="bi bi-paypal"></i> PayPal
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> 
+                            Payment processing is not yet implemented. This is a demonstration checkout flow.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <div class="card position-sticky" style="top: 20px;">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-3">Items (@cart.Items.Count)</h6>
+                        <div class="order-items mb-3" style="max-height: 200px; overflow-y: auto;">
+                            @foreach (var item in cart.Items)
+                            {
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="flex-grow-1">
+                                        <small>@item.ProductName</small>
+                                        <br>
+                                        <small class="text-muted">Qty: @item.Quantity × @item.UnitPrice.ToString("C")</small>
+                                    </div>
+                                    <strong class="ms-2">@item.SubTotal.ToString("C")</strong>
+                                </div>
+                            }
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong>@cart.TotalAmount.ToString("C")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <strong>@estimatedShipping.ToString("C")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Tax (estimated):</span>
+                            <strong>@estimatedTax.ToString("C")</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-4">
+                            <strong>Total:</strong>
+                            <strong class="text-primary fs-4">@estimatedTotal.ToString("C")</strong>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg w-100 mb-2" 
+                                @onclick="PlaceOrder" 
+                                disabled="@processingOrder">
+                            @if (processingOrder)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Processing...</span>
+                            }
+                            else
+                            {
+                                <span><i class="bi bi-credit-card"></i> Place Order</span>
+                            }
+                        </button>
+
+                        <a href="/cart" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-left"></i> Back to Cart
+                        </a>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check"></i> Secure Checkout
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private CartDto? cart;
+    private bool loading = true;
+    private string? errorMessage;
+    private bool processingOrder = false;
+    private bool orderCompleted = false;
+    private OrderDto? completedOrder;
+
+    private AddressDto shippingAddress = new() { Country = "United States" };
+    private AddressDto billingAddress = new() { Country = "United States" };
+    private bool useSameAddressForBilling = true;
+    private string paymentMethod = "CreditCard";
+
+    private decimal estimatedShipping = 9.99m;
+    private decimal estimatedTax => cart?.TotalAmount * 0.08m ?? 0;
+    private decimal estimatedTotal => (cart?.TotalAmount ?? 0) + estimatedShipping + estimatedTax;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCart();
+    }
+
+    private async Task LoadCart()
+    {
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            var sessionId = SessionService.GetSessionId();
+            var userId = SessionService.GetUserId();
+            cart = await CartApi.GetCartAsync(sessionId, userId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading cart: {ex.Message}. Please ensure the API is running.";
+            Logger.LogError(ex, "Error loading cart");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task PlaceOrder()
+    {
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(shippingAddress.FirstName) ||
+            string.IsNullOrWhiteSpace(shippingAddress.LastName) ||
+            string.IsNullOrWhiteSpace(shippingAddress.Street) ||
+            string.IsNullOrWhiteSpace(shippingAddress.City) ||
+            string.IsNullOrWhiteSpace(shippingAddress.State) ||
+            string.IsNullOrWhiteSpace(shippingAddress.PostalCode) ||
+            string.IsNullOrWhiteSpace(shippingAddress.Country))
+        {
+            errorMessage = "Please fill in all required shipping address fields.";
+            return;
+        }
+
+        if (!useSameAddressForBilling)
+        {
+            if (string.IsNullOrWhiteSpace(billingAddress.FirstName) ||
+                string.IsNullOrWhiteSpace(billingAddress.LastName) ||
+                string.IsNullOrWhiteSpace(billingAddress.Street) ||
+                string.IsNullOrWhiteSpace(billingAddress.City) ||
+                string.IsNullOrWhiteSpace(billingAddress.State) ||
+                string.IsNullOrWhiteSpace(billingAddress.PostalCode) ||
+                string.IsNullOrWhiteSpace(billingAddress.Country))
+            {
+                errorMessage = "Please fill in all required billing address fields.";
+                return;
+            }
+        }
+
+        processingOrder = true;
+        errorMessage = null;
+
+        try
+        {
+            var sessionId = SessionService.GetSessionId();
+            var userId = SessionService.GetUserId();
+
+            var checkoutRequest = new CheckoutRequest
+            {
+                SessionId = sessionId,
+                UserId = userId,
+                ShippingAddress = shippingAddress,
+                BillingAddress = useSameAddressForBilling ? shippingAddress : billingAddress,
+                UseSameAddressForBilling = useSameAddressForBilling,
+                PaymentMethod = paymentMethod
+            };
+
+            var (success, order, error) = await CheckoutApi.CheckoutAsync(checkoutRequest);
+
+            if (success && order != null)
+            {
+                completedOrder = order;
+                orderCompleted = true;
+                SessionService.ClearSession(); // Clear session after successful order
+            }
+            else
+            {
+                errorMessage = error ?? "Failed to complete checkout. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error during checkout: {ex.Message}";
+            Logger.LogError(ex, "Error during checkout");
+        }
+        finally
+        {
+            processingOrder = false;
+        }
+    }
+}
