@@ -1,0 +1,12 @@
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.deps.json
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/EcomShopping.Integration.Abstractions.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/EcomShopping.Integration.Abstractions.AssemblyInfoInputs.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/EcomShopping.Integration.Abstractions.AssemblyInfo.cs
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/EcomShopping.Integration.Abstractions.csproj.CoreCompileInputs.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/EcomShopping.Integration.Abstractions.sourcelink.json
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/EcomShopping.Integration.Abstractions.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/refint/EcomShopping.Integration.Abstractions.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/EcomShopping.Integration.Abstractions.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Abstractions/obj/Debug/net8.0/ref/EcomShopping.Integration.Abstractions.dll

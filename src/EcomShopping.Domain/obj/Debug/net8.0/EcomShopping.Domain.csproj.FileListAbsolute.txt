@@ -1,0 +1,12 @@
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/bin/Debug/net8.0/EcomShopping.Domain.deps.json
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/bin/Debug/net8.0/EcomShopping.Domain.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/bin/Debug/net8.0/EcomShopping.Domain.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/EcomShopping.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/EcomShopping.Domain.AssemblyInfoInputs.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/EcomShopping.Domain.AssemblyInfo.cs
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/EcomShopping.Domain.csproj.CoreCompileInputs.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/EcomShopping.Domain.sourcelink.json
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/EcomShopping.Domain.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/refint/EcomShopping.Domain.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/EcomShopping.Domain.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Domain/obj/Debug/net8.0/ref/EcomShopping.Domain.dll

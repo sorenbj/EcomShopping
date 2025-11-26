@@ -1,0 +1,13 @@
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/bin/Debug/net8.0/EcomShopping.FileImport.Core.deps.json
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/bin/Debug/net8.0/EcomShopping.FileImport.Core.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/bin/Debug/net8.0/EcomShopping.FileImport.Core.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/EcomShopping.FileImport.Core.csproj.AssemblyReference.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/EcomShopping.FileImport.Core.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/EcomShopping.FileImport.Core.AssemblyInfoInputs.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/EcomShopping.FileImport.Core.AssemblyInfo.cs
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/EcomShopping.FileImport.Core.csproj.CoreCompileInputs.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/EcomShopping.FileImport.Core.sourcelink.json
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/EcomShopping.FileImport.Core.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/refint/EcomShopping.FileImport.Core.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/EcomShopping.FileImport.Core.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.FileImport.Core/obj/Debug/net8.0/ref/EcomShopping.FileImport.Core.dll
