@@ -1,0 +1,318 @@
+@page "/products/{Id:int}"
+@using EcomShopping.Application.DTOs
+@using EcomShopping.Web.Services
+@inject ProductApiService ProductApi
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>@(product?.Name ?? "Product") - EcomShopping</PageTitle>
+
+<div class="container py-4">
+    @if (loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading product details...</p>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error</h4>
+            <p>@errorMessage</p>
+            <a href="/products" class="btn btn-primary">Back to Products</a>
+        </div>
+    }
+    else if (product == null)
+    {
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading">Product Not Found</h4>
+            <p>The product you're looking for doesn't exist or has been removed.</p>
+            <a href="/products" class="btn btn-primary">Back to Products</a>
+        </div>
+    }
+    else
+    {
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/products">Products</a></li>
+                @if (!string.IsNullOrWhiteSpace(product.CategoryName))
+                {
+                    <li class="breadcrumb-item">@product.CategoryName</li>
+                }
+                <li class="breadcrumb-item active" aria-current="page">@product.Name</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <!-- Product Images -->
+            <div class="col-md-6 mb-4">
+                <div class="product-images">
+                    @if (product.Images?.Any() == true)
+                    {
+                        <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @for (int i = 0; i < product.Images.Count; i++)
+                                {
+                                    var index = i;
+                                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                                        <img src="@product.Images[i]" class="d-block w-100 main-product-image" alt="@product.Name">
+                                    </div>
+                                }
+                            </div>
+                            @if (product.Images.Count > 1)
+                            {
+                                <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            }
+                        </div>
+
+                        @if (product.Images.Count > 1)
+                        {
+                            <div class="row mt-3 g-2">
+                                @for (int i = 0; i < product.Images.Count; i++)
+                                {
+                                    var index = i;
+                                    <div class="col-3">
+                                        <img src="@product.Images[i]" class="img-thumbnail thumbnail-image" alt="@product.Name thumbnail" 
+                                             style="cursor: pointer; height: 80px; object-fit: cover;">
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="bg-light d-flex align-items-center justify-content-center main-product-image">
+                            <span class="text-muted">No Image Available</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Product Details -->
+            <div class="col-md-6">
+                <div class="product-details">
+                    <h1 class="mb-3">@product.Name</h1>
+
+                    @if (!string.IsNullOrWhiteSpace(product.CategoryName))
+                    {
+                        <p class="text-muted mb-2">
+                            <strong>Category:</strong> @product.CategoryName
+                        </p>
+                    }
+
+                    <p class="text-muted mb-3">
+                        <strong>SKU:</strong> @product.SKU
+                    </p>
+
+                    <div class="mb-4">
+                        <h2 class="text-primary">@product.Price.ToString("C")</h2>
+                    </div>
+
+                    <div class="mb-4">
+                        @if (product.StockQuantity > 0)
+                        {
+                            <span class="badge bg-success fs-6 px-3 py-2">
+                                In Stock (@product.StockQuantity available)
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger fs-6 px-3 py-2">
+                                Out of Stock
+                            </span>
+                        }
+                        @if (!product.IsActive)
+                        {
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-2 ms-2">
+                                Inactive
+                            </span>
+                        }
+                    </div>
+
+                    <div class="mb-4">
+                        <h4>Description</h4>
+                        <p class="text-secondary">@product.Description</p>
+                    </div>
+
+                    @if (product.Metadata?.Any() == true)
+                    {
+                        <div class="mb-4">
+                            <h4>Specifications</h4>
+                            <table class="table table-sm">
+                                <tbody>
+                                    @foreach (var meta in product.Metadata)
+                                    {
+                                        <tr>
+                                            <th scope="row" style="width: 40%;">@meta.Key</th>
+                                            <td>@meta.Value</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    <div class="d-grid gap-2">
+                        @if (product.StockQuantity > 0 && product.IsActive)
+                        {
+                            <button class="btn btn-primary btn-lg" @onclick="AddToCart">
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary btn-lg" disabled>
+                                Unavailable
+                            </button>
+                        }
+                        <a href="/products" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Products
+                        </a>
+                    </div>
+
+                    @if (showAddedMessage)
+                    {
+                        <div class="alert alert-success mt-3" role="alert">
+                            Product added to cart! (Cart functionality coming soon)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information Tabs -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details" type="button">
+                            Product Details
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reviews" type="button">
+                            Reviews (Coming Soon)
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content border border-top-0 p-4">
+                    <div class="tab-pane fade show active" id="details">
+                        <h5>Product Information</h5>
+                        <p><strong>Name:</strong> @product.Name</p>
+                        <p><strong>SKU:</strong> @product.SKU</p>
+                        <p><strong>Price:</strong> @product.Price.ToString("C")</p>
+                        <p><strong>Stock:</strong> @product.StockQuantity units</p>
+                        @if (product.CreatedAt != default)
+                        {
+                            <p><strong>Added:</strong> @product.CreatedAt.ToLocalTime().ToString("MMMM dd, yyyy")</p>
+                        }
+                        @if (product.UpdatedAt.HasValue)
+                        {
+                            <p><strong>Last Updated:</strong> @product.UpdatedAt.Value.ToLocalTime().ToString("MMMM dd, yyyy")</p>
+                        }
+                    </div>
+                    <div class="tab-pane fade" id="reviews">
+                        <p class="text-muted">Product reviews and ratings will be available in a future update.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .main-product-image {
+        width: 100%;
+        height: 400px;
+        object-fit: contain;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+    }
+
+    .thumbnail-image:hover {
+        opacity: 0.7;
+        border-color: var(--bs-primary);
+    }
+
+    .product-details h1 {
+        font-size: 2rem;
+        font-weight: 600;
+    }
+
+    .product-details h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProductDto? product;
+    private bool loading = true;
+    private string? errorMessage;
+    private bool showAddedMessage = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProduct();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadProduct();
+    }
+
+    private async Task LoadProduct()
+    {
+        loading = true;
+        errorMessage = null;
+        product = null;
+
+        try
+        {
+            product = await ProductApi.GetProductByIdAsync(Id);
+            
+            if (product == null)
+            {
+                errorMessage = "Product not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading product: {ex.Message}. Please ensure the API is running.";
+            Console.WriteLine($"Error: {ex}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void AddToCart()
+    {
+        // Placeholder for cart functionality
+        showAddedMessage = true;
+        StateHasChanged();
+        
+        // Hide message after 3 seconds
+        Task.Delay(3000).ContinueWith(_ =>
+        {
+            showAddedMessage = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+}
