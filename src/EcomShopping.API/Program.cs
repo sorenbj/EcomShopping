@@ -2,6 +2,8 @@ using EcomShopping.Infrastructure.Data;
 using EcomShopping.Domain.Interfaces;
 using EcomShopping.Infrastructure.Repositories;
 using EcomShopping.Domain.Entities;
+using EcomShopping.Integration.Core;
+using EcomShopping.Integration.Core.Providers;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +37,25 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IRepository<Category>, CategoryRepository>();
+
+// Register integration services
+builder.Services.AddSingleton<IntegrationProviderRegistry>();
+builder.Services.AddSingleton<IntegrationEngine>();
+builder.Services.AddSingleton<IntegrationScheduler>();
+
+// Register mock integration providers
+builder.Services.AddSingleton(sp =>
+{
+    var registry = sp.GetRequiredService<IntegrationProviderRegistry>();
+    
+    // Register mock providers
+    registry.Register("mock-erp", new MockErpIntegration());
+    registry.Register("mock-crm", new MockCrmIntegration());
+    registry.Register("mock-shipping", new MockShippingProvider());
+    registry.Register("mock-payment", new MockPaymentProvider());
+    
+    return registry;
+});
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();

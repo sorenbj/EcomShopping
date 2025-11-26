@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "5QbiO3zjaTI=",
+  "dgSpecHash": "nHlu1COhHyo=",
   "success": true,
   "projectFilePath": "/home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/EcomShopping.UnitTests.csproj",
   "expectedPackageFiles": [
@@ -10,7 +10,8 @@
     "/home/runner/.nuget/packages/fluentvalidation/12.1.0/fluentvalidation.12.1.0.nupkg.sha512",
     "/home/runner/.nuget/packages/fluentvalidation.dependencyinjectionextensions/12.1.0/fluentvalidation.dependencyinjectionextensions.12.1.0.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.codecoverage/17.8.0/microsoft.codecoverage.17.8.0.nupkg.sha512",
-    "/home/runner/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/2.1.0/microsoft.extensions.dependencyinjection.abstractions.2.1.0.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.extensions.logging.abstractions/8.0.0/microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.net.test.sdk/17.8.0/microsoft.net.test.sdk.17.8.0.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.netcore.platforms/1.1.0/microsoft.netcore.platforms.1.1.0.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.netcore.targets/1.1.0/microsoft.netcore.targets.1.1.0.nupkg.sha512",

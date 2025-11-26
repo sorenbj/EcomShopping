@@ -88,3 +88,7 @@
 /home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.API/obj/Debug/net8.0/EcomShopping.API.pdb
 /home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.API/obj/Debug/net8.0/EcomShopping.API.genruntimeconfig.cache
 /home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.API/obj/Debug/net8.0/ref/EcomShopping.API.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.API/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.API/bin/Debug/net8.0/EcomShopping.Integration.Core.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.API/bin/Debug/net8.0/EcomShopping.Integration.Core.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.API/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.pdb
