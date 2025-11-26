@@ -3,6 +3,7 @@
 @using EcomShopping.Web.Services
 @inject ProductApiService ProductApi
 @inject NavigationManager NavigationManager
+@inject ILogger<ProductDetail> Logger
 @rendermode InteractiveServer
 
 <PageTitle>@(product?.Name ?? "Product") - EcomShopping</PageTitle>
@@ -294,7 +295,7 @@
         catch (Exception ex)
         {
             errorMessage = $"Error loading product: {ex.Message}. Please ensure the API is running.";
-            Console.WriteLine($"Error: {ex}");
+            Logger.LogError(ex, "Error loading product {ProductId}", Id);
         }
         finally
         {
@@ -302,17 +303,15 @@
         }
     }
 
-    private void AddToCart()
+    private async Task AddToCart()
     {
         // Placeholder for cart functionality
         showAddedMessage = true;
         StateHasChanged();
         
         // Hide message after 3 seconds
-        Task.Delay(3000).ContinueWith(_ =>
-        {
-            showAddedMessage = false;
-            InvokeAsync(StateHasChanged);
-        });
+        await Task.Delay(3000);
+        showAddedMessage = false;
+        StateHasChanged();
     }
 }

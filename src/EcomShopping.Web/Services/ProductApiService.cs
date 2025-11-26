@@ -45,7 +45,8 @@ public class ProductApiService
             var url = $"api/products?{string.Join("&", queryParams)}";
             var response = await _httpClient.GetFromJsonAsync<PagedProductResponse>(url);
             
-            // Apply client-side sorting if needed
+            // Note: Client-side sorting is done here as a temporary solution
+            // TODO: Implement server-side sorting in the API for better performance
             if (response?.Items != null && !string.IsNullOrWhiteSpace(sortBy))
             {
                 response.Items = sortBy.ToLower() switch

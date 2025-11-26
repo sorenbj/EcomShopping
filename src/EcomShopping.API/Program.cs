@@ -28,12 +28,13 @@ builder.Services.AddCors(options =>
 
 // Configure Database
 // Use InMemory database for development if SQL Server is not available
-var useInMemory = builder.Configuration.GetValue<bool>("UseInMemoryDatabase", true);
+var useInMemory = builder.Configuration.GetValue<bool>("UseInMemoryDatabase", false);
 
-if (useInMemory)
+if (useInMemory || builder.Environment.IsDevelopment())
 {
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseInMemoryDatabase("EcomShoppingDb"));
+    useInMemory = true; // Force true for seeding check
 }
 else
 {
