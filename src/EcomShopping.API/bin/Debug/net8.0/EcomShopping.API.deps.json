@@ -10,6 +10,7 @@
         "dependencies": {
           "EcomShopping.Application": "1.0.0",
           "EcomShopping.Infrastructure": "1.0.0",
+          "EcomShopping.Integration.Core": "1.0.0",
           "Microsoft.AspNetCore.OpenApi": "8.0.22",
           "Swashbuckle.AspNetCore": "6.6.2"
         },
@@ -574,6 +575,26 @@
             "fileVersion": "1.0.0.0"
           }
         }
+      },
+      "EcomShopping.Integration.Abstractions/1.0.0": {
+        "runtime": {
+          "EcomShopping.Integration.Abstractions.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "EcomShopping.Integration.Core/1.0.0": {
+        "dependencies": {
+          "EcomShopping.Integration.Abstractions": "1.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
+        },
+        "runtime": {
+          "EcomShopping.Integration.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
       }
     }
   },
@@ -888,6 +909,16 @@
       "sha512": ""
     },
     "EcomShopping.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "EcomShopping.Integration.Abstractions/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "EcomShopping.Integration.Core/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

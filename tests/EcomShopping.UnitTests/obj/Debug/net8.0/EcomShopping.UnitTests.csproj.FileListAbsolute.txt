@@ -111,3 +111,8 @@
 /home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/obj/Debug/net8.0/EcomShopping.UnitTests.pdb
 /home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/obj/Debug/net8.0/EcomShopping.UnitTests.genruntimeconfig.cache
 /home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/obj/Debug/net8.0/ref/EcomShopping.UnitTests.dll
+/home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/bin/Debug/net8.0/Microsoft.Extensions.Logging.Abstractions.dll
+/home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.dll
+/home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/bin/Debug/net8.0/EcomShopping.Integration.Core.dll
+/home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/bin/Debug/net8.0/EcomShopping.Integration.Core.pdb
+/home/runner/work/EcomShopping/EcomShopping/tests/EcomShopping.UnitTests/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.pdb

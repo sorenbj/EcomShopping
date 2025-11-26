@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EcomShopping.Application\EcomShopping.Application.csproj" />
     <ProjectReference Include="..\EcomShopping.Infrastructure\EcomShopping.Infrastructure.csproj" />
+    <ProjectReference Include="..\EcomShopping.Integration.Core\EcomShopping.Integration.Core.csproj" />
   </ItemGroup>
 
 </Project>

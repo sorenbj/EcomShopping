@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EcomShopping.FileImport.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e4d44a5779d0e68249feaa1d21c78ae3df220385")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+703fca3e5a5048e2c34fa91229702a533cc71a1a")]
 [assembly: System.Reflection.AssemblyProductAttribute("EcomShopping.FileImport.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EcomShopping.FileImport.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
