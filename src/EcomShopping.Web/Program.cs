@@ -15,6 +15,21 @@ builder.Services.AddHttpClient<ProductApiService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<CartApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddHttpClient<CheckoutApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Register session service as scoped (per user connection)
+builder.Services.AddScoped<SessionService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -1,0 +1,310 @@
+@page "/cart"
+@using EcomShopping.Application.DTOs
+@using EcomShopping.Web.Services
+@inject CartApiService CartApi
+@inject SessionService SessionService
+@inject NavigationManager NavigationManager
+@inject ILogger<Cart> Logger
+@rendermode InteractiveServer
+
+<PageTitle>Shopping Cart - EcomShopping</PageTitle>
+
+<div class="container py-4">
+    <h1 class="mb-4">Shopping Cart</h1>
+
+    @if (loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading cart...</span>
+            </div>
+            <p class="mt-2">Loading your cart...</p>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error</h4>
+            <p>@errorMessage</p>
+            <button class="btn btn-primary" @onclick="LoadCart">Try Again</button>
+        </div>
+    }
+    else if (cart == null || !cart.Items.Any())
+    {
+        <div class="alert alert-info text-center py-5" role="alert">
+            <h3 class="alert-heading">Your cart is empty</h3>
+            <p class="mb-4">Looks like you haven't added any items to your cart yet.</p>
+            <a href="/products" class="btn btn-primary btn-lg">
+                <i class="bi bi-shop"></i> Continue Shopping
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <!-- Cart Items -->
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Cart Items (@cart.Items.Count)</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @foreach (var item in cart.Items)
+                        {
+                            <div class="cart-item border-bottom p-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2 col-3">
+                                        @if (!string.IsNullOrWhiteSpace(item.ProductImage))
+                                        {
+                                            <img src="@item.ProductImage" class="img-fluid rounded" alt="@item.ProductName">
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 80px;">
+                                                <span class="text-muted small">No Image</span>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-md-4 col-9">
+                                        <h6 class="mb-1">@item.ProductName</h6>
+                                        @if (!string.IsNullOrWhiteSpace(item.ProductSku))
+                                        {
+                                            <p class="text-muted small mb-0">SKU: @item.ProductSku</p>
+                                        }
+                                        <p class="text-primary mb-0">@item.UnitPrice.ToString("C")</p>
+                                    </div>
+                                    <div class="col-md-3 col-6 mt-2 mt-md-0">
+                                        <div class="input-group">
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" 
+                                                    @onclick="() => UpdateQuantity(item, -1)"
+                                                    disabled="@(updatingItemId == item.Id)">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            <input type="number" class="form-control form-control-sm text-center" 
+                                                   value="@item.Quantity" 
+                                                   @onchange="(e) => UpdateQuantityDirect(item, e.Value?.ToString())"
+                                                   min="1" 
+                                                   disabled="@(updatingItemId == item.Id)">
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" 
+                                                    @onclick="() => UpdateQuantity(item, 1)"
+                                                    disabled="@(updatingItemId == item.Id)">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col-4 mt-2 mt-md-0 text-end">
+                                        <strong>@item.SubTotal.ToString("C")</strong>
+                                    </div>
+                                    <div class="col-md-1 col-2 mt-2 mt-md-0 text-end">
+                                        <button class="btn btn-danger btn-sm" 
+                                                @onclick="() => RemoveItem(item)"
+                                                disabled="@(updatingItemId == item.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <a href="/products" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong>@cart.TotalAmount.ToString("C")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <span class="text-muted">Calculated at checkout</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax:</span>
+                            <span class="text-muted">Calculated at checkout</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total:</strong>
+                            <strong class="text-primary fs-4">@cart.TotalAmount.ToString("C")</strong>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg w-100 mb-2" @onclick="ProceedToCheckout">
+                            <i class="bi bi-credit-card"></i> Proceed to Checkout
+                        </button>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check"></i> Secure Checkout
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (showSuccessMessage)
+        {
+            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                @successMessage
+                <button type="button" class="btn-close" @onclick="() => showSuccessMessage = false"></button>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .cart-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .cart-item:last-child {
+        border-bottom: none !important;
+    }
+</style>
+
+@code {
+    private CartDto? cart;
+    private bool loading = true;
+    private string? errorMessage;
+    private int? updatingItemId = null;
+    private bool showSuccessMessage = false;
+    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCart();
+    }
+
+    private async Task LoadCart()
+    {
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            var sessionId = SessionService.GetSessionId();
+            var userId = SessionService.GetUserId();
+            cart = await CartApi.GetCartAsync(sessionId, userId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading cart: {ex.Message}. Please ensure the API is running.";
+            Logger.LogError(ex, "Error loading cart");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task UpdateQuantity(CartItemDto item, int delta)
+    {
+        var newQuantity = item.Quantity + delta;
+        if (newQuantity < 1) return;
+
+        await UpdateItemQuantity(item, newQuantity);
+    }
+
+    private async Task UpdateQuantityDirect(CartItemDto item, string? quantityStr)
+    {
+        if (int.TryParse(quantityStr, out var quantity) && quantity >= 1)
+        {
+            await UpdateItemQuantity(item, quantity);
+        }
+    }
+
+    private async Task UpdateItemQuantity(CartItemDto item, int newQuantity)
+    {
+        updatingItemId = item.Id;
+        try
+        {
+            var sessionId = SessionService.GetSessionId();
+            var userId = SessionService.GetUserId();
+            
+            var success = await CartApi.UpdateCartItemAsync(item.Id, new UpdateCartItemRequest
+            {
+                SessionId = sessionId,
+                UserId = userId,
+                Quantity = newQuantity
+            });
+
+            if (success)
+            {
+                item.Quantity = newQuantity;
+                ShowSuccess("Cart updated successfully!");
+            }
+            else
+            {
+                errorMessage = "Failed to update cart item. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating cart: {ex.Message}";
+            Logger.LogError(ex, "Error updating cart item {ItemId}", item.Id);
+        }
+        finally
+        {
+            updatingItemId = null;
+        }
+    }
+
+    private async Task RemoveItem(CartItemDto item)
+    {
+        updatingItemId = item.Id;
+        try
+        {
+            var sessionId = SessionService.GetSessionId();
+            var userId = SessionService.GetUserId();
+            
+            var success = await CartApi.RemoveFromCartAsync(item.Id, sessionId, userId);
+
+            if (success)
+            {
+                await LoadCart();
+                ShowSuccess("Item removed from cart!");
+            }
+            else
+            {
+                errorMessage = "Failed to remove item. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error removing item: {ex.Message}";
+            Logger.LogError(ex, "Error removing cart item {ItemId}", item.Id);
+        }
+        finally
+        {
+            updatingItemId = null;
+        }
+    }
+
+    private void ProceedToCheckout()
+    {
+        NavigationManager.NavigateTo("/checkout");
+    }
+
+    private async void ShowSuccess(string message)
+    {
+        successMessage = message;
+        showSuccessMessage = true;
+        StateHasChanged();
+        
+        await Task.Delay(3000);
+        showSuccessMessage = false;
+        StateHasChanged();
+    }
+}

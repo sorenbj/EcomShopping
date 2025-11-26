@@ -1,3 +1,4 @@
+using EcomShopping.Application.DTOs;
 using EcomShopping.Domain.Entities;
 using EcomShopping.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,7 @@ public class CartController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<Cart>> GetCart([FromQuery] string? sessionId, [FromQuery] string? userId)
+    public async Task<ActionResult<CartDto>> GetCart([FromQuery] string? sessionId, [FromQuery] string? userId)
     {
         try
         {
@@ -43,7 +44,8 @@ public class CartController : ControllerBase
                 return NotFound("Cart not found");
             }
 
-            return Ok(cart);
+            var cartDto = MapToCartDto(cart);
+            return Ok(cartDto);
         }
         catch (Exception ex)
         {
@@ -53,12 +55,13 @@ public class CartController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Cart>> CreateCart([FromBody] Cart cart)
+    public async Task<ActionResult<CartDto>> CreateCart([FromBody] Cart cart)
     {
         try
         {
             var createdCart = await _cartRepository.AddAsync(cart);
-            return CreatedAtAction(nameof(GetCart), new { sessionId = createdCart.SessionId }, createdCart);
+            var cartDto = MapToCartDto(createdCart);
+            return CreatedAtAction(nameof(GetCart), new { sessionId = createdCart.SessionId }, cartDto);
         }
         catch (Exception ex)
         {
@@ -68,7 +71,7 @@ public class CartController : ControllerBase
     }
 
     [HttpPost("items")]
-    public async Task<ActionResult> AddCartItem([FromBody] CartItemRequest request)
+    public async Task<ActionResult<CartDto>> AddCartItem([FromBody] CartItemRequest request)
     {
         try
         {
@@ -84,6 +87,11 @@ public class CartController : ControllerBase
                 return NotFound("Product not found");
             }
 
+            if (product.StockQuantity < request.Quantity)
+            {
+                return BadRequest($"Insufficient stock. Only {product.StockQuantity} items available.");
+            }
+
             var cartItem = new CartItem
             {
                 CartId = cart.Id,
@@ -96,7 +104,10 @@ public class CartController : ControllerBase
             cart.Items.Add(cartItem);
             await _cartRepository.UpdateAsync(cart);
 
-            return Ok(cart);
+            // Reload cart with product information
+            cart = await _cartRepository.GetByIdAsync(cart.Id);
+            var cartDto = MapToCartDto(cart!);
+            return Ok(cartDto);
         }
         catch (Exception ex)
         {
@@ -184,6 +195,30 @@ public class CartController : ControllerBase
         }
 
         return cart;
+    }
+
+    private CartDto MapToCartDto(Cart cart)
+    {
+        return new CartDto
+        {
+            Id = cart.Id,
+            SessionId = cart.SessionId,
+            UserId = cart.UserId,
+            CreatedAt = cart.CreatedAt,
+            UpdatedAt = cart.UpdatedAt,
+            Items = cart.Items.Select(item => new CartItemDto
+            {
+                Id = item.Id,
+                CartId = item.CartId,
+                ProductId = item.ProductId,
+                ProductName = item.Product?.Name ?? "Unknown Product",
+                ProductSku = item.Product?.SKU,
+                ProductImage = item.Product?.Images?.FirstOrDefault(),
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                AddedAt = item.AddedAt
+            }).ToList()
+        };
     }
 }
 
