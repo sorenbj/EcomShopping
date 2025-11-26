@@ -8,7 +8,16 @@ public class OrderDto
     public string OrderNumber { get; set; } = string.Empty;
     public string? UserId { get; set; }
     public OrderStatus Status { get; set; }
+    public PaymentStatus PaymentStatus { get; set; }
+    public decimal SubTotal { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal TaxAmount { get; set; }
+    public decimal ShippingAmount { get; set; }
     public decimal TotalAmount { get; set; }
+    public string? CouponCode { get; set; }
+    public decimal TaxRate { get; set; }
+    public string? PaymentMethod { get; set; }
+    public string? PaymentTransactionId { get; set; }
     public DateTime OrderDate { get; set; }
     public DateTime? ShippedDate { get; set; }
     public DateTime? DeliveredDate { get; set; }
@@ -47,7 +56,27 @@ public class CheckoutRequest
     public string SessionId { get; set; } = string.Empty;
     public string? UserId { get; set; }
     public AddressDto ShippingAddress { get; set; } = new();
-    public AddressDto BillingAddress { get; set; } = new();
+    public AddressDto? BillingAddress { get; set; }
     public bool UseSameAddressForBilling { get; set; } = true;
+    public string? CouponCode { get; set; }
+    public decimal TaxRate { get; set; } = 0.0m;
     public string PaymentMethod { get; set; } = string.Empty;
+    public PaymentDetailsDto? PaymentDetails { get; set; }
 }
+
+public class PaymentDetailsDto
+{
+    public string? CardNumber { get; set; }
+    public string? CardHolderName { get; set; }
+    public string? ExpiryMonth { get; set; }
+    public string? ExpiryYear { get; set; }
+    public string? Cvv { get; set; }
+}
+
+public class CheckoutResponse
+{
+    public bool Success { get; set; }
+    public string? ErrorMessage { get; set; }
+    public OrderDto? Order { get; set; }
+}
+

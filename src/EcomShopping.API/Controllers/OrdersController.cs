@@ -1,5 +1,7 @@
+using EcomShopping.Application.DTOs;
 using EcomShopping.Domain.Entities;
 using EcomShopping.Domain.Interfaces;
+using EcomShopping.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcomShopping.API.Controllers;
@@ -9,16 +11,16 @@ namespace EcomShopping.API.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly ICartRepository _cartRepository;
+    private readonly CheckoutService _checkoutService;
     private readonly ILogger<OrdersController> _logger;
 
     public OrdersController(
         IOrderRepository orderRepository,
-        ICartRepository cartRepository,
+        CheckoutService checkoutService,
         ILogger<OrdersController> logger)
     {
         _orderRepository = orderRepository;
-        _cartRepository = cartRepository;
+        _checkoutService = checkoutService;
         _logger = logger;
     }
 
@@ -30,11 +32,13 @@ public class OrdersController : ControllerBase
             if (string.IsNullOrEmpty(userId))
             {
                 var allOrders = await _orderRepository.GetAllAsync();
-                return Ok(allOrders);
+                var allOrderDtos = allOrders.Select(MapToOrderDto).ToList();
+                return Ok(allOrderDtos);
             }
 
             var orders = await _orderRepository.GetByUserIdAsync(userId);
-            return Ok(orders);
+            var orderDtos = orders.Select(MapToOrderDto).ToList();
+            return Ok(orderDtos);
         }
         catch (Exception ex)
         {
@@ -53,7 +57,9 @@ public class OrdersController : ControllerBase
             {
                 return NotFound();
             }
-            return Ok(order);
+            
+            var orderDto = MapToOrderDto(order);
+            return Ok(orderDto);
         }
         catch (Exception ex)
         {
@@ -63,48 +69,74 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost("checkout")]
-    public async Task<ActionResult<Order>> Checkout([FromBody] CheckoutRequest request)
+    public async Task<ActionResult<CheckoutResponse>> Checkout([FromBody] CheckoutRequest request)
     {
         try
         {
-            var cart = await _cartRepository.GetBySessionIdAsync(request.SessionId)
-                ?? (request.UserId != null ? await _cartRepository.GetByUserIdAsync(request.UserId) : null);
+            // Map AddressDto to Address entity and save if needed
+            Address? shippingAddress = null;
+            Address? billingAddress = null;
 
-            if (cart == null || !cart.Items.Any())
+            if (request.ShippingAddress.Id == 0)
             {
-                return BadRequest("Cart is empty");
+                shippingAddress = MapToAddress(request.ShippingAddress);
             }
 
-            var order = new Order
+            if (request.UseSameAddressForBilling)
             {
-                OrderNumber = GenerateOrderNumber(),
+                billingAddress = shippingAddress;
+            }
+            else if (request.BillingAddress != null && request.BillingAddress.Id == 0)
+            {
+                billingAddress = MapToAddress(request.BillingAddress);
+            }
+
+            var checkoutData = new CheckoutData
+            {
+                SessionId = request.SessionId,
                 UserId = request.UserId,
-                Status = OrderStatus.Pending,
-                OrderDate = DateTime.UtcNow,
-                ShippingAddressId = request.ShippingAddressId,
-                BillingAddressId = request.BillingAddressId,
-                Items = cart.Items.Select(ci => new OrderItem
+                ShippingAddressId = request.ShippingAddress.Id > 0 ? request.ShippingAddress.Id : null,
+                BillingAddressId = request.BillingAddress?.Id > 0 ? request.BillingAddress.Id : null,
+                CouponCode = request.CouponCode,
+                TaxRate = request.TaxRate,
+                PaymentMethod = request.PaymentMethod,
+                PaymentRequest = request.PaymentDetails != null ? new PaymentRequest
                 {
-                    ProductId = ci.ProductId,
-                    Quantity = ci.Quantity,
-                    UnitPrice = ci.UnitPrice,
-                    TotalPrice = ci.Quantity * ci.UnitPrice
-                }).ToList()
+                    CardNumber = request.PaymentDetails.CardNumber,
+                    CardHolderName = request.PaymentDetails.CardHolderName,
+                    ExpiryMonth = request.PaymentDetails.ExpiryMonth,
+                    ExpiryYear = request.PaymentDetails.ExpiryYear,
+                    Cvv = request.PaymentDetails.Cvv
+                } : null
             };
 
-            order.TotalAmount = order.Items.Sum(i => i.TotalPrice);
+            var result = await _checkoutService.ProcessCheckoutAsync(checkoutData);
 
-            var createdOrder = await _orderRepository.AddAsync(order);
+            if (!result.Success)
+            {
+                return BadRequest(new CheckoutResponse
+                {
+                    Success = false,
+                    ErrorMessage = result.ErrorMessage
+                });
+            }
 
-            // Clear the cart after successful order creation
-            await _cartRepository.DeleteAsync(cart.Id);
+            var orderDto = MapToOrderDto(result.Order!);
 
-            return CreatedAtAction(nameof(GetOrder), new { id = createdOrder.Id }, createdOrder);
+            return Ok(new CheckoutResponse
+            {
+                Success = true,
+                Order = orderDto
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating order");
-            return StatusCode(500, "An error occurred while creating the order");
+            return StatusCode(500, new CheckoutResponse
+            {
+                Success = false,
+                ErrorMessage = "An error occurred while creating the order"
+            });
         }
     }
 
@@ -148,7 +180,77 @@ public class OrdersController : ControllerBase
     {
         return $"ORD-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}";
     }
+
+    private Address MapToAddress(AddressDto dto)
+    {
+        return new Address
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Street = dto.Street,
+            City = dto.City,
+            State = dto.State,
+            PostalCode = dto.PostalCode,
+            Country = dto.Country,
+            Phone = dto.Phone,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    private OrderDto MapToOrderDto(Order order)
+    {
+        return new OrderDto
+        {
+            Id = order.Id,
+            OrderNumber = order.OrderNumber,
+            UserId = order.UserId,
+            Status = order.Status,
+            PaymentStatus = order.PaymentStatus,
+            SubTotal = order.SubTotal,
+            DiscountAmount = order.DiscountAmount,
+            TaxAmount = order.TaxAmount,
+            ShippingAmount = order.ShippingAmount,
+            TotalAmount = order.TotalAmount,
+            CouponCode = order.CouponCode,
+            TaxRate = order.TaxRate,
+            PaymentMethod = order.PaymentMethod,
+            PaymentTransactionId = order.PaymentTransactionId,
+            OrderDate = order.OrderDate,
+            ShippedDate = order.ShippedDate,
+            DeliveredDate = order.DeliveredDate,
+            CancelledDate = order.CancelledDate,
+            ShippingAddress = order.ShippingAddress != null ? MapToAddressDto(order.ShippingAddress) : null,
+            BillingAddress = order.BillingAddress != null ? MapToAddressDto(order.BillingAddress) : null,
+            Items = order.Items.Select(item => new OrderItemDto
+            {
+                Id = item.Id,
+                ProductId = item.ProductId,
+                ProductName = item.Product?.Name ?? "Unknown Product",
+                ProductSku = item.Product?.SKU,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                TotalPrice = item.TotalPrice
+            }).ToList()
+        };
+    }
+
+    private AddressDto MapToAddressDto(Address address)
+    {
+        return new AddressDto
+        {
+            Id = address.Id,
+            FirstName = address.FirstName,
+            LastName = address.LastName,
+            Street = address.Street,
+            City = address.City,
+            State = address.State,
+            PostalCode = address.PostalCode,
+            Country = address.Country,
+            Phone = address.Phone
+        };
+    }
 }
 
-public record CheckoutRequest(string SessionId, string? UserId, int? ShippingAddressId, int? BillingAddressId);
 public record UpdateOrderStatusRequest(OrderStatus Status);
+
+
