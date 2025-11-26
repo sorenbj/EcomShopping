@@ -401,7 +401,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error during checkout: {ex.Message}";
+            errorMessage = "An error occurred during checkout. Please try again.";
             Logger.LogError(ex, "Error during checkout");
         }
         finally

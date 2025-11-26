@@ -399,7 +399,7 @@
         }
         catch (Exception ex)
         {
-            addToCartError = $"Error adding to cart: {ex.Message}";
+            addToCartError = "An error occurred while adding to cart. Please try again.";
             Logger.LogError(ex, "Error adding product {ProductId} to cart", product.Id);
         }
         finally
