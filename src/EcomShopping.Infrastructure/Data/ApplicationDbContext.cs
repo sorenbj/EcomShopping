@@ -29,10 +29,21 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(250);
+            entity.HasIndex(e => e.Slug).IsUnique();
             entity.Property(e => e.SKU).IsRequired().HasMaxLength(100);
             entity.HasIndex(e => e.SKU).IsUnique();
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
             entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            
+            // Configure Metadata as a JSON column
+            entity.Property(e => e.Metadata)
+                .HasColumnType("nvarchar(max)")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new Dictionary<string, string>());
+            
             entity.HasOne(e => e.Category)
                 .WithMany(c => c.Products)
                 .HasForeignKey(e => e.CategoryId)

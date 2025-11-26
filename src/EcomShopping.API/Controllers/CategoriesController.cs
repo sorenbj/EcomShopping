@@ -56,6 +56,7 @@ public class CategoriesController : ControllerBase
     {
         try
         {
+            category.CreatedAt = DateTime.UtcNow;
             var createdCategory = await _categoryRepository.AddAsync(category);
             return CreatedAtAction(nameof(GetCategory), new { id = createdCategory.Id }, createdCategory);
         }
@@ -82,6 +83,7 @@ public class CategoriesController : ControllerBase
                 return NotFound();
             }
 
+            category.UpdatedAt = DateTime.UtcNow;
             await _categoryRepository.UpdateAsync(category);
             return NoContent();
         }

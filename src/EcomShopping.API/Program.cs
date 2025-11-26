@@ -37,6 +37,7 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IRepository<Category>, CategoryRepository>();
+builder.Services.AddScoped<IStockMovementRepository, StockMovementRepository>();
 
 // Register integration services
 builder.Services.AddSingleton<IntegrationProviderRegistry>();
@@ -61,7 +62,20 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "EcomShopping API", Version = "v1" });
+    c.SwaggerDoc("v1", new() 
+    { 
+        Title = "EcomShopping API", 
+        Version = "v1",
+        Description = "API for managing an e-commerce platform with product catalog, inventory, categories, orders, and cart management"
+    });
+    
+    // Enable XML documentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 });
 
 var app = builder.Build();

@@ -61,6 +61,13 @@ public class ProductRepository : IProductRepository
             .FirstOrDefaultAsync(p => p.SKU == sku);
     }
 
+    public async Task<Product?> GetBySlugAsync(string slug)
+    {
+        return await _context.Products
+            .Include(p => p.Category)
+            .FirstOrDefaultAsync(p => p.Slug == slug);
+    }
+
     public async Task<Product> AddAsync(Product entity)
     {
         entity.CreatedAt = DateTime.UtcNow;
