@@ -257,9 +257,18 @@ public class ProductsController : ControllerBase
 
     private string GenerateSlug(string name)
     {
-        return name.ToLowerInvariant()
-            .Replace(" ", "-")
-            .Replace("&", "and")
-            .Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return string.Empty;
+
+        // Convert to lowercase and remove accents
+        var slug = name.ToLowerInvariant();
+        
+        // Replace spaces and special characters with hyphens
+        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9\s-]", "");
+        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"\s+", "-");
+        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
+        
+        // Trim hyphens from start and end
+        return slug.Trim('-');
     }
 }

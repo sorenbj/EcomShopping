@@ -57,19 +57,32 @@ public class StockMovementRepository : IStockMovementRepository
             CreatedBy = createdBy
         };
 
-        // Update product stock quantity
+        // Store original stock for error message
+        var originalStock = product.StockQuantity;
+
+        // Update product stock quantity based on movement type
+        // Purchase, Return, and positive Adjustments increase stock
+        // Sale, Damage, and negative Adjustments decrease stock
         switch (type)
         {
             case StockMovementType.Purchase:
             case StockMovementType.Return:
-            case StockMovementType.Adjustment when quantity > 0:
-                product.StockQuantity += Math.Abs(quantity);
+                product.StockQuantity += quantity;
                 break;
             case StockMovementType.Sale:
             case StockMovementType.Damage:
-            case StockMovementType.Adjustment when quantity < 0:
-                product.StockQuantity -= Math.Abs(quantity);
+                product.StockQuantity -= quantity;
                 break;
+            case StockMovementType.Adjustment:
+                // For adjustments, quantity can be positive (increase) or negative (decrease)
+                product.StockQuantity += quantity;
+                break;
+        }
+
+        // Ensure stock doesn't go negative
+        if (product.StockQuantity < 0)
+        {
+            throw new InvalidOperationException($"Insufficient stock. Current stock: {originalStock}, requested: {Math.Abs(quantity)}, would result in: {product.StockQuantity}");
         }
 
         product.UpdatedAt = DateTime.UtcNow;
