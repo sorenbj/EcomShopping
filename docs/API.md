@@ -359,6 +359,289 @@ Content-Type: application/json
 
 ---
 
+### Coupons
+
+#### Get All Coupons
+```http
+GET /api/coupons
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "code": "SAVE20",
+    "description": "20% off your order",
+    "type": 0,
+    "value": 20.0,
+    "minimumOrderAmount": 50.0,
+    "maximumDiscountAmount": 25.0,
+    "validFrom": "2024-01-01T00:00:00Z",
+    "validUntil": "2024-12-31T23:59:59Z",
+    "usageLimit": 100,
+    "usageCount": 25,
+    "isActive": true
+  }
+]
+```
+
+**Coupon Types:**
+- `Percentage` (0): Discount is a percentage of subtotal
+- `FixedAmount` (1): Discount is a fixed dollar amount
+- `FreeShipping` (2): Free shipping applied
+
+#### Get Active Coupons
+```http
+GET /api/coupons/active
+```
+
+Returns only coupons that are currently active and within their validity period.
+
+#### Get Coupon by ID
+```http
+GET /api/coupons/{id}
+```
+
+#### Validate Coupon
+```http
+POST /api/coupons/validate
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "code": "SAVE20",
+  "orderAmount": 100.0
+}
+```
+
+**Response:**
+```json
+{
+  "isValid": true,
+  "coupon": {
+    "id": 1,
+    "code": "SAVE20",
+    "description": "20% off your order",
+    "type": 0,
+    "value": 20.0,
+    "minimumOrderAmount": 50.0,
+    "maximumDiscountAmount": 25.0,
+    "validFrom": "2024-01-01T00:00:00Z",
+    "validUntil": "2024-12-31T23:59:59Z",
+    "usageLimit": 100,
+    "usageCount": 25,
+    "isActive": true
+  },
+  "discountAmount": 20.0
+}
+```
+
+**Error Response:**
+```json
+{
+  "isValid": false,
+  "errorMessage": "Coupon has expired"
+}
+```
+
+#### Create Coupon
+```http
+POST /api/coupons
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "code": "SAVE20",
+  "description": "20% off your order",
+  "type": 0,
+  "value": 20.0,
+  "minimumOrderAmount": 50.0,
+  "maximumDiscountAmount": 25.0,
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2024-12-31T23:59:59Z",
+  "usageLimit": 100
+}
+```
+
+**Response:** `201 Created` with coupon object
+
+#### Update Coupon
+```http
+PUT /api/coupons/{id}
+Content-Type: application/json
+```
+
+**Request Body:** Same as Create Coupon
+
+**Response:** `204 No Content`
+
+#### Delete Coupon
+```http
+DELETE /api/coupons/{id}
+```
+
+**Response:** `204 No Content`
+
+---
+
+### Enhanced Checkout
+
+#### Checkout (Create Order from Cart)
+```http
+POST /api/orders/checkout
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "sessionId": "session-123",
+  "userId": "user-456",
+  "shippingAddress": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "street": "123 Main St",
+    "city": "San Francisco",
+    "state": "CA",
+    "postalCode": "94105",
+    "country": "USA",
+    "phone": "+1-555-0100"
+  },
+  "billingAddress": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "street": "123 Main St",
+    "city": "San Francisco",
+    "state": "CA",
+    "postalCode": "94105",
+    "country": "USA",
+    "phone": "+1-555-0100"
+  },
+  "useSameAddressForBilling": true,
+  "couponCode": "SAVE20",
+  "taxRate": 0.08,
+  "paymentMethod": "CreditCard",
+  "paymentDetails": {
+    "cardNumber": "4111111111111111",
+    "cardHolderName": "John Doe",
+    "expiryMonth": "12",
+    "expiryYear": "2025",
+    "cvv": "123"
+  }
+}
+```
+
+**Field Descriptions:**
+- `sessionId`: Required. Cart session identifier
+- `userId`: Optional. User identifier if logged in
+- `shippingAddress`: Required. Shipping address details
+- `billingAddress`: Optional. If not provided, uses shipping address
+- `useSameAddressForBilling`: Default true. Use shipping as billing address
+- `couponCode`: Optional. Coupon code to apply
+- `taxRate`: Required. Tax rate as decimal (e.g., 0.08 for 8%)
+- `paymentMethod`: Required. Payment method name
+- `paymentDetails`: Optional. Payment card details for processing
+
+**Response:**
+```json
+{
+  "success": true,
+  "order": {
+    "id": 1,
+    "orderNumber": "ORD-20240101120000-ABC123",
+    "userId": "user-456",
+    "status": 0,
+    "paymentStatus": 2,
+    "subTotal": 100.00,
+    "discountAmount": 20.00,
+    "taxAmount": 6.40,
+    "shippingAmount": 5.99,
+    "totalAmount": 92.39,
+    "couponCode": "SAVE20",
+    "taxRate": 0.08,
+    "paymentMethod": "CreditCard",
+    "paymentTransactionId": "TXN-20240101120000-1000",
+    "orderDate": "2024-01-01T12:00:00Z",
+    "shippingAddress": {
+      "id": 1,
+      "firstName": "John",
+      "lastName": "Doe",
+      "street": "123 Main St",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94105",
+      "country": "USA",
+      "phone": "+1-555-0100"
+    },
+    "billingAddress": {
+      "id": 1,
+      "firstName": "John",
+      "lastName": "Doe",
+      "street": "123 Main St",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94105",
+      "country": "USA",
+      "phone": "+1-555-0100"
+    },
+    "items": [
+      {
+        "id": 1,
+        "productId": 1,
+        "productName": "Wireless Headphones",
+        "productSku": "ELEC-WH-001",
+        "quantity": 2,
+        "unitPrice": 50.00,
+        "totalPrice": 100.00
+      }
+    ]
+  }
+}
+```
+
+**Payment Status Values:**
+- `Pending` (0): Payment not yet processed
+- `Authorized` (1): Payment authorized but not captured
+- `Captured` (2): Payment successfully captured
+- `Failed` (3): Payment failed
+- `Refunded` (4): Payment fully refunded
+- `PartiallyRefunded` (5): Payment partially refunded
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "errorMessage": "Cart is empty"
+}
+```
+
+**Common Error Messages:**
+- "Cart is empty"
+- "Invalid coupon code"
+- "Coupon is not valid or has expired"
+- "Insufficient stock for {product}. Only {count} available."
+- "Payment failed: {error message}"
+
+**Checkout Flow:**
+1. Retrieve cart by sessionId or userId
+2. Validate all items have sufficient inventory
+3. Calculate subtotal from cart items
+4. Apply coupon discount if provided
+5. Calculate shipping costs
+6. Calculate tax on taxable amount
+7. Authorize payment if payment details provided
+8. Create order with all calculated amounts
+9. Reduce product inventory
+10. Clear cart
+11. Capture payment if authorized
+
+---
+
 ## Error Responses
 
 All endpoints return consistent error responses:

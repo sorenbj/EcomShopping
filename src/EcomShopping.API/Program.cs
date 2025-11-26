@@ -1,6 +1,8 @@
 using EcomShopping.Infrastructure.Data;
 using EcomShopping.Domain.Interfaces;
 using EcomShopping.Infrastructure.Repositories;
+using EcomShopping.Infrastructure.Payment;
+using EcomShopping.Infrastructure.Services;
 using EcomShopping.Domain.Entities;
 using EcomShopping.Integration.Core;
 using EcomShopping.Integration.Core.Providers;
@@ -48,8 +50,13 @@ else
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ICouponRepository, CouponRepository>();
 builder.Services.AddScoped<IRepository<Category>, CategoryRepository>();
 builder.Services.AddScoped<IStockMovementRepository, StockMovementRepository>();
+
+// Register services
+builder.Services.AddScoped<IPaymentProvider, FakePaymentProvider>();
+builder.Services.AddScoped<CheckoutService>();
 
 // Register integration services
 builder.Services.AddSingleton<IntegrationProviderRegistry>();

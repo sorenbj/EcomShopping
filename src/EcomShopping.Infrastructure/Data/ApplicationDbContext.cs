@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Address> Addresses => Set<Address>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<ImportJob> ImportJobs => Set<ImportJob>();
 
@@ -93,8 +94,16 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.OrderNumber).IsRequired().HasMaxLength(100);
             entity.HasIndex(e => e.OrderNumber).IsUnique();
+            entity.Property(e => e.SubTotal).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.TaxAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.ShippingAmount).HasColumnType("decimal(18,2)");
             entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.TaxRate).HasColumnType("decimal(5,4)");
             entity.Property(e => e.UserId).HasMaxLength(200);
+            entity.Property(e => e.PaymentMethod).HasMaxLength(100);
+            entity.Property(e => e.PaymentTransactionId).HasMaxLength(200);
+            entity.Property(e => e.CouponCode).HasMaxLength(50);
             entity.HasOne(e => e.ShippingAddress)
                 .WithMany()
                 .HasForeignKey(e => e.ShippingAddressId)
@@ -102,6 +111,10 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.BillingAddress)
                 .WithMany()
                 .HasForeignKey(e => e.BillingAddressId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Coupon)
+                .WithMany()
+                .HasForeignKey(e => e.CouponId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -155,6 +168,18 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(500);
             entity.Property(e => e.FileType).IsRequired().HasMaxLength(50);
             entity.Property(e => e.CreatedBy).HasMaxLength(200);
+        });
+
+        // Coupon configuration
+        modelBuilder.Entity<Coupon>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Value).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.MinimumOrderAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.MaximumDiscountAmount).HasColumnType("decimal(18,2)");
         });
     }
 }
