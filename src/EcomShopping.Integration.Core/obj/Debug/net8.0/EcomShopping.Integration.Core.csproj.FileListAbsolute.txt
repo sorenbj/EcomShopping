@@ -1,0 +1,16 @@
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/bin/Debug/net8.0/EcomShopping.Integration.Core.deps.json
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/bin/Debug/net8.0/EcomShopping.Integration.Core.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/bin/Debug/net8.0/EcomShopping.Integration.Core.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/bin/Debug/net8.0/EcomShopping.Integration.Abstractions.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShopping.Integration.Core.csproj.AssemblyReference.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShopping.Integration.Core.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShopping.Integration.Core.AssemblyInfoInputs.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShopping.Integration.Core.AssemblyInfo.cs
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShopping.Integration.Core.csproj.CoreCompileInputs.cache
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShopping.Integration.Core.sourcelink.json
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShop.891EA209.Up2Date
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShopping.Integration.Core.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/refint/EcomShopping.Integration.Core.dll
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/EcomShopping.Integration.Core.pdb
+/home/runner/work/EcomShopping/EcomShopping/src/EcomShopping.Integration.Core/obj/Debug/net8.0/ref/EcomShopping.Integration.Core.dll
