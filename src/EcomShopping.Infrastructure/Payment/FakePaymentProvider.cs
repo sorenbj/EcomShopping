@@ -40,7 +40,7 @@ public class FakePaymentProvider : IPaymentProvider
             TransactionId = transactionId,
             Metadata = new Dictionary<string, string>
             {
-                { "AuthorizationCode", Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper() }
+                { "AuthorizationCode", Guid.NewGuid().ToString("N")[..6].ToUpperInvariant() }
             }
         });
     }
