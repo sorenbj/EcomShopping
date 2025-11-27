@@ -54,8 +54,15 @@ public class CheckoutApiService
                 return (false, null, "Failed to create order. Please try again later.");
             }
 
-            var order = await orderResponse.Content.ReadFromJsonAsync<OrderDto>();
-            return (true, order, null);
+            var checkoutResponse = await orderResponse.Content.ReadFromJsonAsync<CheckoutResponse>();
+            
+            if (checkoutResponse == null || checkoutResponse.Order == null)
+            {
+                _logger.LogError("Failed to deserialize checkout response");
+                return (false, null, "Failed to process order response. Please try again.");
+            }
+            
+            return (true, checkoutResponse.Order, null);
         }
         catch (HttpRequestException ex)
         {
