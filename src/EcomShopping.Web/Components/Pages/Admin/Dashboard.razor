@@ -1,0 +1,177 @@
+@page "/admin"
+@rendermode InteractiveServer
+@inject AdminApiService AdminApi
+@inject NavigationManager Navigation
+
+<PageTitle>Admin Dashboard - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5">Admin Dashboard</h1>
+            <p class="text-muted">Manage your e-commerce platform</p>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading dashboard...</p>
+        </div>
+    }
+    else if (stats != null)
+    {
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <!-- Products Card -->
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Products</h6>
+                        <h2 class="card-title">@stats.TotalProducts</h2>
+                        <p class="card-text text-success mb-0">
+                            <small>@stats.ActiveProducts active</small>
+                        </p>
+                        @if (stats.LowStockProducts > 0)
+                        {
+                            <p class="card-text text-danger mb-0">
+                                <small>⚠️ @stats.LowStockProducts low stock</small>
+                            </p>
+                        }
+                        <a href="/admin/products" class="btn btn-sm btn-outline-primary mt-2">Manage</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Card -->
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Orders</h6>
+                        <h2 class="card-title">@stats.TotalOrders</h2>
+                        <p class="card-text mb-0">
+                            <small>@stats.PendingOrders pending</small>
+                        </p>
+                        <p class="card-text mb-0">
+                            <small>@stats.ProcessingOrders processing</small>
+                        </p>
+                        <a href="/admin/orders" class="btn btn-sm btn-outline-info mt-2">View Orders</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue Card -->
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Total Revenue</h6>
+                        <h2 class="card-title">$@stats.TotalRevenue.ToString("N2")</h2>
+                        <p class="card-text text-success mb-0">
+                            <small>@stats.DeliveredOrders delivered</small>
+                        </p>
+                        <p class="card-text mb-0">
+                            <small>@stats.ShippedOrders shipped</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Card -->
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Users</h6>
+                        <h2 class="card-title">@stats.TotalUsers</h2>
+                        <p class="card-text text-success mb-0">
+                            <small>@stats.ActiveUsers active</small>
+                        </p>
+                        <a href="/admin/users" class="btn btn-sm btn-outline-warning mt-2">Manage</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <a href="/admin/products/create" class="btn btn-primary w-100">
+                                    <i class="bi bi-plus-circle"></i> Add Product
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/admin/categories" class="btn btn-secondary w-100">
+                                    <i class="bi bi-folder"></i> Manage Categories
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/admin/inventory" class="btn btn-info w-100">
+                                    <i class="bi bi-box-seam"></i> Inventory
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/admin/imports" class="btn btn-success w-100">
+                                    <i class="bi bi-upload"></i> Import Data
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Jobs Status -->
+        @if (stats.RecentImportJobs > 0)
+        {
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Import Jobs</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Recent imports: @stats.RecentImportJobs</p>
+                            @if (stats.PendingImports > 0)
+                            {
+                                <p class="text-warning">⚠️ @stats.PendingImports pending imports</p>
+                            }
+                            <a href="/admin/imports" class="btn btn-sm btn-outline-primary">View All Imports</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="alert alert-danger" role="alert">
+            Failed to load dashboard statistics. Please try refreshing the page.
+        </div>
+    }
+</div>
+
+@code {
+    private DashboardStatsDto? stats;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardAsync();
+    }
+
+    private async Task LoadDashboardAsync()
+    {
+        isLoading = true;
+        stats = await AdminApi.GetDashboardStatsAsync();
+        isLoading = false;
+    }
+}

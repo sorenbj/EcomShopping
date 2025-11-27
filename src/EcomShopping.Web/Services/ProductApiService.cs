@@ -117,6 +117,58 @@ public class ProductApiService
             return null;
         }
     }
+
+    /// <summary>
+    /// Create a new product
+    /// </summary>
+    public async Task<ProductDto?> CreateProductAsync(CreateProductDto product)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/products", product);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<ProductDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating product");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Update an existing product
+    /// </summary>
+    public async Task<bool> UpdateProductAsync(int id, UpdateProductDto product)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"api/products/{id}", product);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating product {ProductId}", id);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Delete a product
+    /// </summary>
+    public async Task<bool> DeleteProductAsync(int id)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"api/products/{id}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting product {ProductId}", id);
+            return false;
+        }
+    }
 }
 
 /// <summary>

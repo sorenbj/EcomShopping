@@ -1,0 +1,116 @@
+@page "/admin/users"
+@rendermode InteractiveServer
+@inject AdminApiService AdminApi
+@inject IJSRuntime JSRuntime
+
+<PageTitle>User Management - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6">User Management</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="/admin" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (users.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Users (@users.Count)</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Roles</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Last Login</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in users)
+                        {
+                            <tr>
+                                <td><strong>@user.UserName</strong></td>
+                                <td>@user.Email</td>
+                                <td>@user.FirstName @user.LastName</td>
+                                <td>@user.PhoneNumber</td>
+                                <td>
+                                    @foreach (var role in user.Roles)
+                                    {
+                                        <span class="badge bg-info me-1">@role</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                    @if (user.EmailConfirmed)
+                                    {
+                                        <span class="badge bg-primary ms-1">
+                                            <i class="bi bi-check-circle"></i>
+                                        </span>
+                                    }
+                                </td>
+                                <td><small>@user.CreatedAt.ToString("d")</small></td>
+                                <td>
+                                    @if (user.LastLoginAt.HasValue)
+                                    {
+                                        <small>@user.LastLoginAt.Value.ToString("g")</small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">Never</small>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">No users found in the system.</div>
+    }
+</div>
+
+@code {
+    private List<UserDto> users = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        isLoading = true;
+        var data = await AdminApi.GetUsersAsync();
+        users = data ?? new List<UserDto>();
+        isLoading = false;
+    }
+}

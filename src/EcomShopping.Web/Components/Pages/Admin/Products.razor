@@ -1,0 +1,267 @@
+@page "/admin/products"
+@rendermode InteractiveServer
+@inject ProductApiService ProductApi
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Product Management - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6">Product Management</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="/admin/products/create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add New Product
+            </a>
+            <a href="/admin" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" placeholder="Search products..." 
+                           @bind="searchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" />
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="selectedCategoryId" @bind:after="LoadProductsAsync">
+                        <option value="0">All Categories</option>
+                        @foreach (var category in categories)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="pageSize" @bind:after="LoadProductsAsync">
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-outline-secondary" @onclick="ResetFilters">
+                        <i class="bi bi-x-circle"></i> Reset Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (productsResponse != null && productsResponse.Items.Any())
+    {
+        <!-- Products Table -->
+        <div class="card">
+            <div class="card-header">
+                <strong>@productsResponse.TotalCount Products</strong> 
+                (Page @currentPage of @productsResponse.TotalPages)
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>SKU</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in productsResponse.Items)
+                        {
+                            <tr>
+                                <td>
+                                    @if (product.Images.Any())
+                                    {
+                                        <img src="@product.Images.First()" alt="@product.Name" 
+                                             style="width: 50px; height: 50px; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-secondary text-white d-flex align-items-center justify-content-center" 
+                                             style="width: 50px; height: 50px;">
+                                            <i class="bi bi-image"></i>
+                                        </div>
+                                    }
+                                </td>
+                                <td><small class="text-muted">@product.SKU</small></td>
+                                <td>
+                                    <strong>@product.Name</strong>
+                                </td>
+                                <td>@product.CategoryName</td>
+                                <td><strong>$@product.Price.ToString("N2")</strong></td>
+                                <td>
+                                    @if (product.StockQuantity <= 10)
+                                    {
+                                        <span class="badge bg-danger">@product.StockQuantity</span>
+                                    }
+                                    else if (product.StockQuantity <= 50)
+                                    {
+                                        <span class="badge bg-warning">@product.StockQuantity</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">@product.StockQuantity</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (product.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="/admin/products/edit/@product.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteProduct(product.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="card-footer">
+                <nav aria-label="Product pagination">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(currentPage - 1)">Previous</button>
+                        </li>
+                        
+                        @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(productsResponse.TotalPages, currentPage + 2); i++)
+                        {
+                            var pageNumber = i;
+                            <li class="page-item @(currentPage == pageNumber ? "active" : "")">
+                                <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                            </li>
+                        }
+                        
+                        <li class="page-item @(currentPage >= productsResponse.TotalPages ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(currentPage + 1)">Next</button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            No products found. <a href="/admin/products/create" class="alert-link">Create your first product</a>
+        </div>
+    }
+</div>
+
+@code {
+    private PagedProductResponse? productsResponse;
+    private List<CategoryDto> categories = new();
+    private bool isLoading = true;
+    private string searchTerm = string.Empty;
+    private int selectedCategoryId = 0;
+    private int currentPage = 1;
+    private int pageSize = 25;
+    private System.Threading.Timer? searchDebounceTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategoriesAsync();
+        await LoadProductsAsync();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        var categoriesData = await ProductApi.GetCategoriesAsync();
+        categories = categoriesData ?? new List<CategoryDto>();
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        isLoading = true;
+        productsResponse = await ProductApi.GetProductsAsync(
+            page: currentPage,
+            pageSize: pageSize,
+            search: string.IsNullOrWhiteSpace(searchTerm) ? null : searchTerm,
+            categoryId: selectedCategoryId > 0 ? selectedCategoryId : null
+        );
+        isLoading = false;
+    }
+
+    private void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        searchDebounceTimer?.Dispose();
+        searchDebounceTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                currentPage = 1;
+                await LoadProductsAsync();
+                StateHasChanged();
+            });
+        }, null, 500, Timeout.Infinite);
+    }
+
+    private async Task ChangePage(int page)
+    {
+        if (page < 1 || (productsResponse != null && page > productsResponse.TotalPages))
+            return;
+
+        currentPage = page;
+        await LoadProductsAsync();
+    }
+
+    private async Task ResetFilters()
+    {
+        searchTerm = string.Empty;
+        selectedCategoryId = 0;
+        currentPage = 1;
+        await LoadProductsAsync();
+    }
+
+    private async Task DeleteProduct(int id)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this product?"))
+        {
+            var success = await ProductApi.DeleteProductAsync(id);
+            if (success)
+            {
+                await LoadProductsAsync();
+            }
+            else
+            {
+                // Could show an error message here
+                await JSRuntime.InvokeVoidAsync("alert", "Failed to delete product. Please try again.");
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        searchDebounceTimer?.Dispose();
+    }
+}

@@ -1,0 +1,359 @@
+@page "/admin/imports"
+@rendermode InteractiveServer
+@inject FileImportApiService ImportApi
+@inject IJSRuntime JSRuntime
+
+<PageTitle>File Import Management - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6">File Import Management</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-primary" @onclick="ShowImportWizard">
+                <i class="bi bi-upload"></i> Import File
+            </button>
+            <a href="/admin" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+        </div>
+    }
+
+    <!-- Import Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Imports</h6>
+                    <h2>@importJobs.Count</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted">Pending</h6>
+                    <h2>@importJobs.Count(j => j.Status == ImportJobStatus.Pending)</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h6 class="text-muted">Processing</h6>
+                    <h2>@importJobs.Count(j => j.Status == ImportJobStatus.Processing)</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h6 class="text-muted">Completed</h6>
+                    <h2>@importJobs.Count(j => j.Status == ImportJobStatus.Completed)</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Jobs Table -->
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (importJobs.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Import History</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Records</th>
+                            <th>Created</th>
+                            <th>Duration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var job in importJobs.OrderByDescending(j => j.CreatedAt))
+                        {
+                            <tr>
+                                <td><strong>@job.FileName</strong></td>
+                                <td><span class="badge bg-secondary">@job.FileType</span></td>
+                                <td>
+                                    @switch (job.Status)
+                                    {
+                                        case ImportJobStatus.Pending:
+                                            <span class="badge bg-warning">Pending</span>
+                                            break;
+                                        case ImportJobStatus.Processing:
+                                            <span class="badge bg-info">Processing</span>
+                                            break;
+                                        case ImportJobStatus.Completed:
+                                            <span class="badge bg-success">Completed</span>
+                                            break;
+                                        case ImportJobStatus.Failed:
+                                            <span class="badge bg-danger">Failed</span>
+                                            break;
+                                        case ImportJobStatus.PartiallyCompleted:
+                                            <span class="badge bg-warning">Partial</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    @if (job.Status == ImportJobStatus.Processing || job.Status == ImportJobStatus.Completed || job.Status == ImportJobStatus.PartiallyCompleted)
+                                    {
+                                        <div class="progress" style="width: 100px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: @job.ProgressPercentage.ToString("F0")%"
+                                                 aria-valuenow="@job.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
+                                                @job.ProgressPercentage.ToString("F0")%
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">-</small>
+                                    }
+                                </td>
+                                <td>
+                                    <small>
+                                        Total: @job.TotalRecords<br/>
+                                        <span class="text-success">✓ @job.SuccessfulRecords</span>
+                                        @if (job.FailedRecords > 0)
+                                        {
+                                            <br/><span class="text-danger">✗ @job.FailedRecords</span>
+                                        }
+                                    </small>
+                                </td>
+                                <td><small>@job.CreatedAt.ToString("g")</small></td>
+                                <td>
+                                    @if (job.Duration.HasValue)
+                                    {
+                                        <small>@job.Duration.Value.TotalSeconds.ToString("F1")s</small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">-</small>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewJobDetails(job)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    @if (job.Status == ImportJobStatus.Failed || job.Status == ImportJobStatus.Completed)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteJob(job.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No import jobs found. Click "Import File" to start your first import.
+        </div>
+    }
+</div>
+
+<!-- Import Wizard Modal -->
+@if (showWizard)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import File Wizard</h5>
+                    <button type="button" class="btn-close" @onclick="CloseWizard"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <small>
+                            <strong>Supported formats:</strong> Excel (.xlsx), JSON (.json), XML (.xml)<br/>
+                            Note: File upload functionality requires API integration. This is a demonstration UI.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">File Name</label>
+                        <input type="text" class="form-control" @bind="newImport.FileName" placeholder="products.xlsx" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">File Type</label>
+                        <select class="form-select" @bind="newImport.FileType">
+                            <option value="Excel">Excel (.xlsx)</option>
+                            <option value="JSON">JSON (.json)</option>
+                            <option value="XML">XML (.xml)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Created By</label>
+                        <input type="text" class="form-control" @bind="newImport.CreatedBy" placeholder="Admin" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseWizard">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="CreateImportJob">
+                        <i class="bi bi-upload"></i> Create Import Job
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Job Details Modal -->
+@if (showDetails && selectedJob != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Job Details</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDetails"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>File Name:</strong> @selectedJob.FileName
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Type:</strong> @selectedJob.FileType
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Status:</strong> @selectedJob.Status
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Progress:</strong> @selectedJob.ProgressPercentage.ToString("F1")%
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Total Records:</strong> @selectedJob.TotalRecords
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Successful:</strong> <span class="text-success">@selectedJob.SuccessfulRecords</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Failed:</strong> <span class="text-danger">@selectedJob.FailedRecords</span>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(selectedJob.ErrorLog))
+                    {
+                        <hr/>
+                        <h6>Error Log:</h6>
+                        <pre class="bg-light p-3" style="max-height: 300px; overflow-y: auto;">@selectedJob.ErrorLog</pre>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDetails">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ImportJobDto> importJobs = new();
+    private bool isLoading = true;
+    private bool showWizard = false;
+    private bool showDetails = false;
+    private string successMessage = string.Empty;
+    private CreateImportJobDto newImport = new() { FileType = "Excel", CreatedBy = "Admin" };
+    private ImportJobDto? selectedJob;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadImportJobsAsync();
+    }
+
+    private async Task LoadImportJobsAsync()
+    {
+        isLoading = true;
+        var jobs = await ImportApi.GetRecentJobsAsync(50);
+        importJobs = jobs ?? new List<ImportJobDto>();
+        isLoading = false;
+    }
+
+    private void ShowImportWizard()
+    {
+        newImport = new CreateImportJobDto { FileType = "Excel", CreatedBy = "Admin" };
+        showWizard = true;
+    }
+
+    private void CloseWizard()
+    {
+        showWizard = false;
+    }
+
+    private async Task CreateImportJob()
+    {
+        if (string.IsNullOrWhiteSpace(newImport.FileName))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Please enter a file name.");
+            return;
+        }
+
+        var result = await ImportApi.CreateJobAsync(newImport);
+        if (result != null)
+        {
+            successMessage = "Import job created successfully.";
+            await LoadImportJobsAsync();
+            CloseWizard();
+        }
+    }
+
+    private void ViewJobDetails(ImportJobDto job)
+    {
+        selectedJob = job;
+        showDetails = true;
+    }
+
+    private void CloseDetails()
+    {
+        showDetails = false;
+        selectedJob = null;
+    }
+
+    private async Task DeleteJob(int id)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this import job?"))
+        {
+            var success = await ImportApi.DeleteJobAsync(id);
+            if (success)
+            {
+                successMessage = "Import job deleted successfully.";
+                await LoadImportJobsAsync();
+            }
+        }
+    }
+}

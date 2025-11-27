@@ -1,0 +1,272 @@
+@page "/admin/inventory"
+@rendermode InteractiveServer
+@inject InventoryApiService InventoryApi
+@inject ProductApiService ProductApi
+
+<PageTitle>Inventory Management - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6">Inventory Management</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-info" @onclick="CheckLowStock">
+                <i class="bi bi-search"></i> Check Low Stock
+            </button>
+            <a href="/admin" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+        </div>
+    }
+
+    <!-- Low Stock Alerts -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Low Stock Alerts
+                        <span class="badge bg-danger ms-2">@lowStockAlerts.Count</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (isLoadingAlerts)
+                    {
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm"></div>
+                        </div>
+                    }
+                    else if (lowStockAlerts.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>SKU</th>
+                                        <th>Current Stock</th>
+                                        <th>Threshold</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var alert in lowStockAlerts)
+                                    {
+                                        <tr>
+                                            <td><strong>@alert.ProductName</strong></td>
+                                            <td><small class="text-muted">@alert.ProductSKU</small></td>
+                                            <td>
+                                                <span class="badge bg-danger">@alert.CurrentStock</span>
+                                            </td>
+                                            <td>@alert.Threshold</td>
+                                            <td><small>@alert.CreatedAt.ToString("g")</small></td>
+                                            <td>
+                                                @if (!alert.IsAcknowledged)
+                                                {
+                                                    <button class="btn btn-sm btn-outline-success" 
+                                                            @onclick="() => AcknowledgeAlert(alert.Id)">
+                                                        <i class="bi bi-check"></i> Acknowledge
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-success">
+                                                        <i class="bi bi-check-circle"></i> Acknowledged
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-success mb-0">
+                            <i class="bi bi-check-circle"></i> No low stock alerts. All products are well stocked!
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Overview -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Stock Overview</h5>
+                </div>
+                <div class="card-body">
+                    @if (isLoadingProducts)
+                    {
+                        <div class="text-center py-3">
+                            <div class="spinner-border"></div>
+                        </div>
+                    }
+                    else if (products != null && products.Items.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>SKU</th>
+                                        <th>Stock Level</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var product in products.Items)
+                                    {
+                                        <tr>
+                                            <td><strong>@product.Name</strong></td>
+                                            <td><small class="text-muted">@product.SKU</small></td>
+                                            <td>
+                                                @if (product.StockQuantity <= 10)
+                                                {
+                                                    <span class="badge bg-danger">@product.StockQuantity</span>
+                                                    <small class="text-danger ms-2">Critical</small>
+                                                }
+                                                else if (product.StockQuantity <= 50)
+                                                {
+                                                    <span class="badge bg-warning">@product.StockQuantity</span>
+                                                    <small class="text-warning ms-2">Low</small>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">@product.StockQuantity</span>
+                                                    <small class="text-success ms-2">Healthy</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (product.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" 
+                                                        @onclick="() => ViewAvailableStock(product.Id)">
+                                                    <i class="bi bi-info-circle"></i> Details
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="mt-3 d-flex justify-content-center">
+                            <nav>
+                                <ul class="pagination mb-0">
+                                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => ChangePage(currentPage - 1)">Previous</button>
+                                    </li>
+                                    <li class="page-item active">
+                                        <span class="page-link">Page @currentPage of @products.TotalPages</span>
+                                    </li>
+                                    <li class="page-item @(currentPage >= products.TotalPages ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => ChangePage(currentPage + 1)">Next</button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No products found.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<LowStockEventDto> lowStockAlerts = new();
+    private PagedProductResponse? products;
+    private bool isLoadingAlerts = true;
+    private bool isLoadingProducts = true;
+    private string successMessage = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 20;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadLowStockAlertsAsync(), LoadProductsAsync());
+    }
+
+    private async Task LoadLowStockAlertsAsync()
+    {
+        isLoadingAlerts = true;
+        var alerts = await InventoryApi.GetLowStockAlertsAsync(unacknowledgedOnly: false);
+        lowStockAlerts = alerts ?? new List<LowStockEventDto>();
+        isLoadingAlerts = false;
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        isLoadingProducts = true;
+        products = await ProductApi.GetProductsAsync(page: currentPage, pageSize: pageSize);
+        isLoadingProducts = false;
+    }
+
+    private async Task AcknowledgeAlert(int eventId)
+    {
+        var success = await InventoryApi.AcknowledgeLowStockAlertAsync(eventId, "Admin");
+        if (success)
+        {
+            successMessage = "Alert acknowledged successfully.";
+            await LoadLowStockAlertsAsync();
+        }
+    }
+
+    private async Task CheckLowStock()
+    {
+        var success = await InventoryApi.CheckLowStockLevelsAsync();
+        if (success)
+        {
+            successMessage = "Low stock check completed.";
+            await LoadLowStockAlertsAsync();
+        }
+    }
+
+    private async Task ViewAvailableStock(int productId)
+    {
+        var stockInfo = await InventoryApi.GetAvailableStockAsync(productId);
+        if (stockInfo != null)
+        {
+            // Could show this in a modal or navigate to a detail page
+            // For now, we'll just show it in the success message
+            successMessage = $"{stockInfo.Name}: {stockInfo.AvailableStock} available ({stockInfo.Reserved} reserved)";
+        }
+    }
+
+    private async Task ChangePage(int page)
+    {
+        if (page < 1 || (products != null && page > products.TotalPages))
+            return;
+
+        currentPage = page;
+        await LoadProductsAsync();
+    }
+}
