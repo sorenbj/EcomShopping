@@ -117,6 +117,7 @@ public class CategoryRepositoryTests : IDisposable
         {
             Name = "Books",
             Description = "Books and literature",
+            CreatedAt = DateTime.UtcNow
         };
 
         // Act
