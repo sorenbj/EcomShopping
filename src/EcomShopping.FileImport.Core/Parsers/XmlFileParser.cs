@@ -34,14 +34,14 @@ public class XmlFileParser : IFileParser
         var allSameName = itemElements.All(e => e.Name == firstElementName);
 
         // If they all have the same name and have child elements or attributes, they are likely the data records
-        if (allSameName && itemElements.All(e => e.HasElements || e.HasAttributes))
-        {
-            // These are the data records
-        }
         // Otherwise, check if root has a single wrapper element
-        else if (itemElements.Count == 1 && itemElements[0].HasElements)
+        if (!allSameName || !itemElements.All(e => e.HasElements || e.HasAttributes))
         {
-            itemElements = itemElements[0].Elements().ToList();
+            // Check if we need to unwrap a collection element
+            if (itemElements.Count == 1 && itemElements[0].HasElements)
+            {
+                itemElements = itemElements[0].Elements().ToList();
+            }
         }
 
         foreach (var item in itemElements)

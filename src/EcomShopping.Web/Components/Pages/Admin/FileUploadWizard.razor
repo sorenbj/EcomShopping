@@ -209,9 +209,49 @@
 
     private async Task CompleteImport()
     {
-        if (uploadResult != null)
+        if (uploadResult != null && selectedFile != null)
         {
-            await OnImportComplete.InvokeAsync(uploadResult.JobId);
+            try
+            {
+                isUploading = true;
+                errorMessage = string.Empty;
+                StateHasChanged();
+
+                // Re-open the file and execute import
+                using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                var result = await ImportApi.UploadAndImportFileAsync(
+                    stream, 
+                    selectedFile.Name, 
+                    selectedTable, 
+                    "Admin");
+
+                if (result != null)
+                {
+                    if (result.SuccessfulRecords > 0)
+                    {
+                        await OnImportComplete.InvokeAsync(result.JobId);
+                    }
+                    else
+                    {
+                        errorMessage = $"Import failed. {string.Join(", ", result.Errors.Take(3))}";
+                        StateHasChanged();
+                    }
+                }
+                else
+                {
+                    errorMessage = "Failed to import data. Please try again.";
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error importing data: {ex.Message}";
+                StateHasChanged();
+            }
+            finally
+            {
+                isUploading = false;
+            }
         }
     }
 }

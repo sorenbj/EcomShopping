@@ -97,21 +97,24 @@ public class ProductImporter : ITableImporter
                 IsActive = record.ContainsKey("IsActive")
                     ? Convert.ToBoolean(record["IsActive"].ToString())
                     : true,
-                Slug = GenerateSlug(record["Name"].ToString()!)
+                Slug = GenerateSlug(record["Name"]?.ToString() ?? string.Empty)
             };
 
             // Handle category if provided
             if (record.ContainsKey("CategoryName") && 
                 !string.IsNullOrWhiteSpace(record["CategoryName"]?.ToString()))
             {
-                var categoryName = record["CategoryName"].ToString()!;
-                var categories = await _categoryRepository.GetAllAsync();
-                var category = categories.FirstOrDefault(c => 
-                    c.Name.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
-                
-                if (category != null)
+                var categoryName = record["CategoryName"]?.ToString() ?? string.Empty;
+                if (!string.IsNullOrEmpty(categoryName))
                 {
-                    product.CategoryId = category.Id;
+                    var categories = await _categoryRepository.GetAllAsync();
+                    var category = categories.FirstOrDefault(c => 
+                        c.Name.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (category != null)
+                    {
+                        product.CategoryId = category.Id;
+                    }
                 }
             }
 
