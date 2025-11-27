@@ -84,4 +84,99 @@ public class FileImportApiService
             return false;
         }
     }
+
+    public async Task<List<ImportTableInfoDto>?> GetAvailableTablesAsync()
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<List<ImportTableInfoDto>>("api/fileimport/tables");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching available import tables");
+            return null;
+        }
+    }
+
+    public async Task<FileUploadResultDto?> UploadFileAsync(
+        Stream fileStream,
+        string fileName,
+        string targetTable,
+        string? createdBy = null)
+    {
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            using var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            content.Add(fileContent, "file", fileName);
+            content.Add(new StringContent(targetTable), "targetTable");
+            
+            if (!string.IsNullOrEmpty(createdBy))
+            {
+                content.Add(new StringContent(createdBy), "createdBy");
+            }
+
+            var response = await _httpClient.PostAsync("api/fileimport/upload", content);
+            response.EnsureSuccessStatusCode();
+            
+            return await response.Content.ReadFromJsonAsync<FileUploadResultDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading file {FileName}", fileName);
+            return null;
+        }
+    }
+
+    public async Task<ImportResultDto?> UploadAndImportFileAsync(
+        Stream fileStream,
+        string fileName,
+        string targetTable,
+        string? createdBy = null)
+    {
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            using var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            content.Add(fileContent, "file", fileName);
+            content.Add(new StringContent(targetTable), "targetTable");
+            
+            if (!string.IsNullOrEmpty(createdBy))
+            {
+                content.Add(new StringContent(createdBy), "createdBy");
+            }
+
+            var response = await _httpClient.PostAsync("api/fileimport/upload-and-import", content);
+            response.EnsureSuccessStatusCode();
+            
+            return await response.Content.ReadFromJsonAsync<ImportResultDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading and importing file {FileName}", fileName);
+            return null;
+        }
+    }
+}
+
+public class FileUploadResultDto
+{
+    public int JobId { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public int TotalRecords { get; set; }
+    public List<string> AvailableFields { get; set; } = new();
+    public List<Dictionary<string, object>> PreviewRecords { get; set; } = new();
+}
+
+public class ImportResultDto
+{
+    public int JobId { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public int TotalRecords { get; set; }
+    public int SuccessfulRecords { get; set; }
+    public int FailedRecords { get; set; }
+    public List<string> Errors { get; set; } = new();
+    public double DurationSeconds { get; set; }
 }

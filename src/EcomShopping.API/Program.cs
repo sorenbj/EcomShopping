@@ -3,9 +3,12 @@ using EcomShopping.Domain.Interfaces;
 using EcomShopping.Infrastructure.Repositories;
 using EcomShopping.Infrastructure.Payment;
 using EcomShopping.Infrastructure.Services;
+using EcomShopping.Infrastructure.Importers;
 using EcomShopping.Domain.Entities;
 using EcomShopping.Integration.Core;
 using EcomShopping.Integration.Core.Providers;
+using EcomShopping.FileImport.Core;
+using EcomShopping.FileImport.Core.Parsers;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,6 +66,15 @@ builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IPaymentProvider, FakePaymentProvider>();
 builder.Services.AddScoped<CheckoutService>();
 builder.Services.AddScoped<InventoryService>();
+
+// Register file import services
+builder.Services.AddScoped<IFileParser, ExcelFileParser>();
+builder.Services.AddScoped<IFileParser, JsonFileParser>();
+builder.Services.AddScoped<IFileParser, XmlFileParser>();
+builder.Services.AddScoped<ITableImporter, ProductImporter>();
+builder.Services.AddScoped<ITableImporter, CategoryImporter>();
+builder.Services.AddScoped<FileImportService>();
+builder.Services.AddScoped<FileImportOrchestrationService>();
 
 // Register integration services
 builder.Services.AddSingleton<IntegrationProviderRegistry>();

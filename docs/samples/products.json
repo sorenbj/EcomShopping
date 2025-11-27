@@ -1,0 +1,32 @@
+[
+  {
+    "Name": "Wireless Keyboard",
+    "SKU": "KB-WL-001",
+    "Description": "Compact wireless keyboard with multimedia keys",
+    "Price": "49.99",
+    "StockQuantity": "150",
+    "CategoryName": "Electronics",
+    "IsActive": "true",
+    "ImageUrl": "https://via.placeholder.com/400x400?text=Wireless+Keyboard"
+  },
+  {
+    "Name": "USB-C Hub",
+    "SKU": "HUB-UC-002",
+    "Description": "7-in-1 USB-C hub with HDMI, USB 3.0, and SD card reader",
+    "Price": "39.99",
+    "StockQuantity": "200",
+    "CategoryName": "Electronics",
+    "IsActive": "true",
+    "ImageUrl": "https://via.placeholder.com/400x400?text=USB-C+Hub"
+  },
+  {
+    "Name": "Portable SSD",
+    "SKU": "SSD-PORT-003",
+    "Description": "1TB portable solid state drive with USB 3.1",
+    "Price": "129.99",
+    "StockQuantity": "80",
+    "CategoryName": "Electronics",
+    "IsActive": "true",
+    "ImageUrl": "https://via.placeholder.com/400x400?text=Portable+SSD"
+  }
+]

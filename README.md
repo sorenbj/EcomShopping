@@ -106,6 +106,7 @@ EcomShopping/
 │   ├── Infrastructure-Setup.md           # Environment setup
 │   ├── CICD-Pipeline.md                  # CI/CD documentation
 │   ├── Integration-Engine-Guide.md       # Integration system guide
+│   ├── File-Import-Guide.md              # File import engine guide
 │   └── API.md                            # API documentation
 ├── .github/
 │   └── workflows/
@@ -161,6 +162,14 @@ EcomShopping/
 ### 📄 File Import System
 - ✅ **Excel (.xlsx)** file import with EPPlus
 - ✅ **JSON** file import with System.Text.Json
+- ✅ **XML** file import with System.Xml.Linq
+- ✅ Generic file import engine with field mapping
+- ✅ Product and Category importers
+- ✅ File upload API endpoint
+- ✅ Admin UI with upload wizard and data preview
+- ✅ Import job tracking and status monitoring
+- ✅ Validation and error handling
+- ✅ Extensible architecture for new file types and tables
 - ✅ **XML** file import (ready for implementation)
 - ✅ Import job tracking and history
 - ✅ Comprehensive error logging per row
@@ -307,6 +316,7 @@ Comprehensive guides are available in the `/docs` directory:
 | [Inventory Management](docs/Inventory-Management.md) | Stock reservations, low-stock alerts, and ERP sync |
 | [CI/CD Pipeline](docs/CICD-Pipeline.md) | GitHub Actions workflow documentation |
 | [Integration Engine](docs/Integration-Engine-Guide.md) | Integration system developer guide |
+| [File Import Engine](docs/File-Import-Guide.md) | File import system guide with examples |
 | [API Documentation](docs/API.md) | REST API endpoints and examples |
 
 ## 👨‍💻 Development

@@ -183,49 +183,7 @@
 <!-- Import Wizard Modal -->
 @if (showWizard)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Import File Wizard</h5>
-                    <button type="button" class="btn-close" @onclick="CloseWizard"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <small>
-                            <strong>Supported formats:</strong> Excel (.xlsx), JSON (.json), XML (.xml)<br/>
-                            Note: File upload functionality requires API integration. This is a demonstration UI.
-                        </small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">File Name</label>
-                        <input type="text" class="form-control" @bind="newImport.FileName" placeholder="products.xlsx" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">File Type</label>
-                        <select class="form-select" @bind="newImport.FileType">
-                            <option value="Excel">Excel (.xlsx)</option>
-                            <option value="JSON">JSON (.json)</option>
-                            <option value="XML">XML (.xml)</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Created By</label>
-                        <input type="text" class="form-control" @bind="newImport.CreatedBy" placeholder="Admin" />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseWizard">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="CreateImportJob">
-                        <i class="bi bi-upload"></i> Create Import Job
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <FileUploadWizard OnClose="CloseWizard" OnImportComplete="HandleImportComplete" />
 }
 
 <!-- Job Details Modal -->
@@ -330,6 +288,13 @@
             await LoadImportJobsAsync();
             CloseWizard();
         }
+    }
+
+    private async Task HandleImportComplete(int jobId)
+    {
+        successMessage = $"Import completed successfully! Job ID: {jobId}";
+        await LoadImportJobsAsync();
+        CloseWizard();
     }
 
     private void ViewJobDetails(ImportJobDto job)
