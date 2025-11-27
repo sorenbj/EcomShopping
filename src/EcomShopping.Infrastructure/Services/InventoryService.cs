@@ -1,5 +1,6 @@
 using EcomShopping.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 namespace EcomShopping.Infrastructure.Services;
 
@@ -12,35 +13,41 @@ public class InventoryService
     private readonly ILowStockEventRepository _lowStockEventRepository;
     private readonly IProductRepository _productRepository;
     private readonly ILogger<InventoryService> _logger;
+    private readonly int _defaultReservationExpirationMinutes;
 
     public InventoryService(
         IStockReservationRepository stockReservationRepository,
         ILowStockEventRepository lowStockEventRepository,
         IProductRepository productRepository,
-        ILogger<InventoryService> logger)
+        ILogger<InventoryService> logger,
+        IConfiguration configuration)
     {
         _stockReservationRepository = stockReservationRepository;
         _lowStockEventRepository = lowStockEventRepository;
         _productRepository = productRepository;
         _logger = logger;
+        _defaultReservationExpirationMinutes = int.TryParse(
+            configuration["Inventory:ReservationExpirationMinutes"], 
+            out var minutes) ? minutes : 15;
     }
 
     /// <summary>
     /// Reserve stock for products in a cart during checkout
     /// </summary>
-    public async Task<List<int>> ReserveCartStockAsync(IEnumerable<(int ProductId, int Quantity)> cartItems, string sessionId, int expirationMinutes = 15)
+    public async Task<List<int>> ReserveCartStockAsync(IEnumerable<(int ProductId, int Quantity)> cartItems, string sessionId, int? expirationMinutes = null)
     {
         var reservationIds = new List<int>();
+        var expiration = expirationMinutes ?? _defaultReservationExpirationMinutes;
 
         foreach (var (productId, quantity) in cartItems)
         {
             try
             {
                 var reservation = await _stockReservationRepository.ReserveStockAsync(
-                    productId, 
+                    productId,
                     quantity, 
                     sessionId, 
-                    expirationMinutes);
+                    expiration);
                 
                 reservationIds.Add(reservation.Id);
                 _logger.LogInformation("Reserved {Quantity} units of product {ProductId} for session {SessionId}", 
@@ -94,21 +101,32 @@ public class InventoryService
                 continue;
 
             var availableStock = await _stockReservationRepository.GetAvailableStockAsync(product.Id);
+            await CheckAndCreateLowStockEventAsync(product.Id, availableStock, product.LowStockThreshold);
+        }
+    }
+
+    /// <summary>
+    /// Check if stock is low and create event if needed (shared logic)
+    /// </summary>
+    public async Task CheckAndCreateLowStockEventAsync(int productId, int availableStock, int threshold)
+    {
+        if (availableStock <= threshold)
+        {
+            // Check if we've already created an event recently (avoid spam)
+            var hasRecentEvent = await _lowStockEventRepository.HasRecentEventAsync(productId, 24);
             
-            if (availableStock <= product.LowStockThreshold)
+            if (!hasRecentEvent)
             {
-                // Check if we've already created an event recently (avoid spam)
-                var hasRecentEvent = await _lowStockEventRepository.HasRecentEventAsync(product.Id, 24);
-                
-                if (!hasRecentEvent)
+                var product = await _productRepository.GetByIdAsync(productId);
+                if (product != null)
                 {
                     await _lowStockEventRepository.CreateEventAsync(
-                        product.Id,
+                        productId,
                         availableStock,
-                        product.LowStockThreshold);
+                        threshold);
                     
                     _logger.LogWarning("Low stock alert created for product {ProductName} (SKU: {SKU}). Available: {AvailableStock}, Threshold: {Threshold}",
-                        product.Name, product.SKU, availableStock, product.LowStockThreshold);
+                        product.Name, product.SKU, availableStock, threshold);
                 }
             }
         }

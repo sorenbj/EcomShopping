@@ -11,7 +11,7 @@ public class CheckoutService
     private readonly ICouponRepository _couponRepository;
     private readonly IPaymentProvider _paymentProvider;
     private readonly IStockReservationRepository _stockReservationRepository;
-    private readonly ILowStockEventRepository _lowStockEventRepository;
+    private readonly InventoryService _inventoryService;
 
     public CheckoutService(
         ICartRepository cartRepository,
@@ -20,7 +20,7 @@ public class CheckoutService
         ICouponRepository couponRepository,
         IPaymentProvider paymentProvider,
         IStockReservationRepository stockReservationRepository,
-        ILowStockEventRepository lowStockEventRepository)
+        InventoryService inventoryService)
     {
         _cartRepository = cartRepository;
         _orderRepository = orderRepository;
@@ -28,7 +28,7 @@ public class CheckoutService
         _couponRepository = couponRepository;
         _paymentProvider = paymentProvider;
         _stockReservationRepository = stockReservationRepository;
-        _lowStockEventRepository = lowStockEventRepository;
+        _inventoryService = inventoryService;
     }
 
     public async Task<CheckoutResult> ProcessCheckoutAsync(CheckoutData checkoutData)
@@ -305,20 +305,9 @@ public class CheckoutService
                 product.StockQuantity -= item.Quantity;
                 await _productRepository.UpdateAsync(product);
 
-                // Check if stock is now low and create event if needed
+                // Check for low stock and create event if needed
                 var availableStock = await _stockReservationRepository.GetAvailableStockAsync(product.Id);
-                if (availableStock <= product.LowStockThreshold)
-                {
-                    // Check if we've already created an event recently (avoid spam)
-                    var hasRecentEvent = await _lowStockEventRepository.HasRecentEventAsync(product.Id, 24);
-                    if (!hasRecentEvent)
-                    {
-                        await _lowStockEventRepository.CreateEventAsync(
-                            product.Id,
-                            availableStock,
-                            product.LowStockThreshold);
-                    }
-                }
+                await _inventoryService.CheckAndCreateLowStockEventAsync(product.Id, availableStock, product.LowStockThreshold);
             }
         }
     }

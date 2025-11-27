@@ -71,13 +71,13 @@ public class InventoryController : ControllerBase
     /// Acknowledge a low-stock event
     /// </summary>
     /// <param name="eventId">Event ID</param>
-    /// <param name="acknowledgedBy">User acknowledging the event</param>
+    /// <param name="acknowledgement">Acknowledgement details</param>
     /// <returns>Success status</returns>
     [HttpPost("low-stock-alerts/{eventId}/acknowledge")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> AcknowledgeLowStockAlert(int eventId, [FromBody] string acknowledgedBy)
+    public async Task<IActionResult> AcknowledgeLowStockAlert(int eventId, [FromBody] AcknowledgeLowStockDto acknowledgement)
     {
         try
         {
@@ -87,7 +87,7 @@ public class InventoryController : ControllerBase
                 return NotFound($"Low-stock event with ID {eventId} not found");
             }
 
-            await _lowStockEventRepository.AcknowledgeEventAsync(eventId, acknowledgedBy);
+            await _lowStockEventRepository.AcknowledgeEventAsync(eventId, acknowledgement.AcknowledgedBy);
             return Ok(new { message = "Low-stock event acknowledged successfully" });
         }
         catch (Exception ex)

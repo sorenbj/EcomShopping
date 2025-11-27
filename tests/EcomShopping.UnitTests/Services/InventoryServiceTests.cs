@@ -2,6 +2,7 @@ using EcomShopping.Infrastructure.Services;
 using EcomShopping.Domain.Interfaces;
 using EcomShopping.Domain.Entities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using Xunit;
 using FluentAssertions;
@@ -14,6 +15,7 @@ public class InventoryServiceTests
     private readonly Mock<ILowStockEventRepository> _lowStockEventRepositoryMock;
     private readonly Mock<IProductRepository> _productRepositoryMock;
     private readonly Mock<ILogger<InventoryService>> _loggerMock;
+    private readonly Mock<IConfiguration> _configurationMock;
     private readonly InventoryService _inventoryService;
 
     public InventoryServiceTests()
@@ -22,12 +24,17 @@ public class InventoryServiceTests
         _lowStockEventRepositoryMock = new Mock<ILowStockEventRepository>();
         _productRepositoryMock = new Mock<IProductRepository>();
         _loggerMock = new Mock<ILogger<InventoryService>>();
+        _configurationMock = new Mock<IConfiguration>();
+        
+        // Setup configuration mock to return default value
+        _configurationMock.Setup(x => x["Inventory:ReservationExpirationMinutes"]).Returns("15");
 
         _inventoryService = new InventoryService(
             _stockReservationRepositoryMock.Object,
             _lowStockEventRepositoryMock.Object,
             _productRepositoryMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object,
+            _configurationMock.Object);
     }
 
     [Fact]
@@ -107,6 +114,8 @@ public class InventoryServiceTests
         };
 
         _productRepositoryMock.Setup(x => x.GetAllAsync()).ReturnsAsync(products);
+        _productRepositoryMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(products[0]);
+        _productRepositoryMock.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(products[1]);
         _stockReservationRepositoryMock.Setup(x => x.GetAvailableStockAsync(1)).ReturnsAsync(5);
         _stockReservationRepositoryMock.Setup(x => x.GetAvailableStockAsync(2)).ReturnsAsync(50);
         _lowStockEventRepositoryMock.Setup(x => x.HasRecentEventAsync(It.IsAny<int>(), 24)).ReturnsAsync(false);

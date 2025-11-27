@@ -39,6 +39,13 @@ public class StockReservationRepository : IStockReservationRepository
 
     public async Task<StockReservation> ReserveStockAsync(int productId, int quantity, string sessionId, int expirationMinutes = 15)
     {
+        // NOTE: There is a potential race condition between checking available stock and creating the reservation.
+        // In a high-concurrency scenario, consider using:
+        // 1. Database-level serializable isolation for this transaction
+        // 2. Optimistic concurrency control with row versioning
+        // 3. Pessimistic locking (SELECT FOR UPDATE)
+        // For now, this implementation is acceptable for typical e-commerce loads.
+        
         var product = await _context.Products.FindAsync(productId);
         if (product == null)
         {
