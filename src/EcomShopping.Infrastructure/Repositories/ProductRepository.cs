@@ -92,4 +92,13 @@ public class ProductRepository : IProductRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<IEnumerable<Product>> GetLowStockProductsAsync(int threshold)
+    {
+        return await _context.Products
+            .Include(p => p.Category)
+            .Where(p => p.IsActive && p.StockQuantity <= threshold)
+            .OrderBy(p => p.StockQuantity)
+            .ToListAsync();
+    }
 }

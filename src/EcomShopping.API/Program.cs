@@ -55,6 +55,9 @@ builder.Services.AddScoped<IRepository<Category>, CategoryRepository>();
 builder.Services.AddScoped<IStockMovementRepository, StockMovementRepository>();
 builder.Services.AddScoped<IStockReservationRepository, StockReservationRepository>();
 builder.Services.AddScoped<ILowStockEventRepository, LowStockEventRepository>();
+builder.Services.AddScoped<IImportJobRepository, ImportJobRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
 // Register services
 builder.Services.AddScoped<IPaymentProvider, FakePaymentProvider>();

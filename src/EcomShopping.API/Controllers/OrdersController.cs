@@ -25,20 +25,31 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Order>>> GetOrders([FromQuery] string? userId)
+    public async Task<ActionResult<IEnumerable<Order>>> GetOrders(
+        [FromQuery] string? userId, 
+        [FromQuery] OrderStatus? status,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        [FromQuery] string? orderNumber,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
         try
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                var allOrders = await _orderRepository.GetAllAsync();
-                var allOrderDtos = allOrders.Select(MapToOrderDto).ToList();
-                return Ok(allOrderDtos);
-            }
+            // Use repository method for database-level filtering and pagination
+            var (items, totalCount) = await _orderRepository.GetFilteredOrdersAsync(
+                userId, status, startDate, endDate, orderNumber, page, pageSize);
 
-            var orders = await _orderRepository.GetByUserIdAsync(userId);
-            var orderDtos = orders.Select(MapToOrderDto).ToList();
-            return Ok(orderDtos);
+            var orderDtos = items.Select(MapToOrderDto).ToList();
+
+            return Ok(new
+            {
+                items = orderDtos,
+                totalCount,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            });
         }
         catch (Exception ex)
         {

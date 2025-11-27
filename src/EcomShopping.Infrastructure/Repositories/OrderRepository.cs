@@ -73,4 +73,61 @@ public class OrderRepository : IOrderRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetFilteredOrdersAsync(
+        string? userId = null,
+        OrderStatus? status = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? orderNumber = null,
+        int page = 1,
+        int pageSize = 10)
+    {
+        var query = _context.Orders
+            .Include(o => o.Items)
+            .ThenInclude(i => i.Product)
+            .Include(o => o.ShippingAddress)
+            .Include(o => o.BillingAddress)
+            .AsQueryable();
+
+        // Apply filters at database level
+        if (!string.IsNullOrEmpty(userId))
+        {
+            query = query.Where(o => o.UserId == userId);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(o => o.Status == status.Value);
+        }
+
+        if (startDate.HasValue)
+        {
+            query = query.Where(o => o.OrderDate >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(o => o.OrderDate <= endDate.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orderNumber))
+        {
+            query = query.Where(o => o.OrderNumber.Contains(orderNumber));
+        }
+
+        // Order by date descending
+        query = query.OrderByDescending(o => o.OrderDate);
+
+        // Get total count before pagination
+        var totalCount = await query.CountAsync();
+
+        // Apply pagination at database level
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
 }

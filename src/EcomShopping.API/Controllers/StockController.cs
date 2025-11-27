@@ -121,6 +121,44 @@ public class StockController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Get low stock alerts for products below threshold (Admin)
+    /// </summary>
+    /// <param name="threshold">Stock quantity threshold (default: 10)</param>
+    /// <returns>List of products with low stock</returns>
+    [HttpGet("low-stock")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<object>> GetLowStockAlerts([FromQuery] int threshold = 10)
+    {
+        try
+        {
+            var lowStockProducts = await _productRepository.GetLowStockProductsAsync(threshold);
+            var alerts = lowStockProducts.Select(p => new
+            {
+                productId = p.Id,
+                name = p.Name,
+                sku = p.SKU,
+                currentStock = p.StockQuantity,
+                threshold,
+                category = p.Category?.Name,
+                isActive = p.IsActive
+            }).ToList();
+
+            return Ok(new
+            {
+                threshold,
+                totalAlerts = alerts.Count,
+                alerts
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving low stock alerts");
+            return StatusCode(500, "An error occurred while retrieving low stock alerts");
+        }
+    }
+
     private StockMovementDto MapToDto(StockMovement movement)
     {
         return new StockMovementDto
