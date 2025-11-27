@@ -1,0 +1,309 @@
+@page "/admin/orders/{id:int}"
+@rendermode InteractiveServer
+@inject OrdersApiService OrdersApi
+@inject NavigationManager Navigation
+
+<PageTitle>Order Details - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-3">Loading order details...</p>
+        </div>
+    }
+    else if (order == null)
+    {
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">Order Not Found</h4>
+            <p>The order you are looking for does not exist or has been deleted.</p>
+            <hr>
+            <div class="mb-0">
+                <button class="btn btn-outline-danger" @onclick="BackToOrders">
+                    <i class="bi bi-arrow-left"></i> Back to Orders
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h1 class="display-6">Order Details</h1>
+                <p class="text-muted">Order #@order.OrderNumber</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <button class="btn btn-outline-secondary" @onclick="BackToOrders">
+                    <i class="bi bi-arrow-left"></i> Back to Orders
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Order Information Card -->
+            <div class="col-md-8">
+                <!-- Order Summary -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <strong>Order Summary</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Order Number:</strong> @order.OrderNumber</p>
+                                <p class="mb-2"><strong>Order Date:</strong> @order.OrderDate.ToString("F")</p>
+                                <p class="mb-2"><strong>Customer:</strong> 
+                                    @if (!string.IsNullOrEmpty(order.UserId))
+                                    {
+                                        <span>User ID: @order.UserId</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Guest</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Payment Method:</strong> @(order.PaymentMethod ?? "N/A")</p>
+                                <p class="mb-2"><strong>Transaction ID:</strong> @(order.PaymentTransactionId ?? "N/A")</p>
+                                @if (!string.IsNullOrEmpty(order.CouponCode))
+                                {
+                                    <p class="mb-2"><strong>Coupon:</strong> @order.CouponCode</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Status Timeline -->
+                        <div class="mt-3">
+                            <strong>Order Timeline:</strong>
+                            <div class="mt-2">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>Ordered on @order.OrderDate.ToString("g")</span>
+                                </div>
+                                @if (order.ShippedDate.HasValue)
+                                {
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        <span>Shipped on @order.ShippedDate.Value.ToString("g")</span>
+                                    </div>
+                                }
+                                @if (order.DeliveredDate.HasValue)
+                                {
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        <span>Delivered on @order.DeliveredDate.Value.ToString("g")</span>
+                                    </div>
+                                }
+                                @if (order.CancelledDate.HasValue)
+                                {
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                        <span>Cancelled on @order.CancelledDate.Value.ToString("g")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <strong>Order Items</strong>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>SKU</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in order.Items)
+                                {
+                                    <tr>
+                                        <td>@item.ProductName</td>
+                                        <td><small class="text-muted">@(item.ProductSku ?? "N/A")</small></td>
+                                        <td class="text-center">@item.Quantity</td>
+                                        <td class="text-end">$@item.UnitPrice.ToString("N2")</td>
+                                        <td class="text-end"><strong>$@item.TotalPrice.ToString("N2")</strong></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Shipping Address -->
+                @if (order.ShippingAddress != null)
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <strong>Shipping Address</strong>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1">@order.ShippingAddress.FirstName @order.ShippingAddress.LastName</p>
+                            <p class="mb-1">@order.ShippingAddress.Street</p>
+                            <p class="mb-1">@order.ShippingAddress.City, @order.ShippingAddress.State @order.ShippingAddress.PostalCode</p>
+                            <p class="mb-1">@order.ShippingAddress.Country</p>
+                            @if (!string.IsNullOrEmpty(order.ShippingAddress.Phone))
+                            {
+                                <p class="mb-0"><strong>Phone:</strong> @order.ShippingAddress.Phone</p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Billing Address -->
+                @if (order.BillingAddress != null)
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <strong>Billing Address</strong>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1">@order.BillingAddress.FirstName @order.BillingAddress.LastName</p>
+                            <p class="mb-1">@order.BillingAddress.Street</p>
+                            <p class="mb-1">@order.BillingAddress.City, @order.BillingAddress.State @order.BillingAddress.PostalCode</p>
+                            <p class="mb-1">@order.BillingAddress.Country</p>
+                            @if (!string.IsNullOrEmpty(order.BillingAddress.Phone))
+                            {
+                                <p class="mb-0"><strong>Phone:</strong> @order.BillingAddress.Phone</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Status and Pricing Sidebar -->
+            <div class="col-md-4">
+                <!-- Status Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <strong>Order Status</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Order Status</strong></label>
+                            <select class="form-select" 
+                                    @onchange="e => UpdateOrderStatus(e.Value?.ToString() ?? string.Empty)"
+                                    value="@order.Status.ToString()">
+                                <option value="Pending">Pending</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label"><strong>Payment Status</strong></label>
+                            <div>
+                                @if (order.PaymentStatus.ToString() == "Captured")
+                                {
+                                    <span class="badge bg-success">Paid</span>
+                                }
+                                else if (order.PaymentStatus.ToString() == "Pending")
+                                {
+                                    <span class="badge bg-warning">Pending</span>
+                                }
+                                else if (order.PaymentStatus.ToString() == "Failed")
+                                {
+                                    <span class="badge bg-danger">Failed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info">@order.PaymentStatus</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <strong>Pricing</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>$@order.SubTotal.ToString("N2")</span>
+                        </div>
+                        @if (order.DiscountAmount > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Discount:</span>
+                                <span>-$@order.DiscountAmount.ToString("N2")</span>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax (@(order.TaxRate * 100)%):</span>
+                            <span>$@order.TaxAmount.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <span>$@order.ShippingAmount.ToString("N2")</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total:</strong>
+                            <strong class="text-primary">$@order.TotalAmount.ToString("N2")</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private OrderDto? order;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrderAsync();
+    }
+
+    private async Task LoadOrderAsync()
+    {
+        isLoading = true;
+        try
+        {
+            order = await OrdersApi.GetOrderAsync(Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task UpdateOrderStatus(string statusString)
+    {
+        if (order == null) return;
+
+        if (Enum.TryParse<OrderStatus>(statusString, out var newStatus))
+        {
+            var success = await OrdersApi.UpdateOrderStatusAsync(order.Id, newStatus);
+            if (success)
+            {
+                await LoadOrderAsync();
+            }
+        }
+    }
+
+    private void BackToOrders()
+    {
+        Navigation.NavigateTo("/admin/orders");
+    }
+}
