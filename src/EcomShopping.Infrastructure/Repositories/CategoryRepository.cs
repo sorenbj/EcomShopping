@@ -26,6 +26,7 @@ public class CategoryRepository : IRepository<Category>
     {
         return await _context.Categories
             .Include(c => c.ParentCategory)
+            .Include(c => c.Products)
             .ToListAsync();
     }
 
