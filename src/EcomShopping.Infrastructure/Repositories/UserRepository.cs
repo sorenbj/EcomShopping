@@ -22,6 +22,8 @@ public class UserRepository : IUserRepository
     public async Task<IEnumerable<User>> GetAllAsync()
     {
         return await _context.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
             .OrderBy(u => u.UserName)
             .ToListAsync();
     }

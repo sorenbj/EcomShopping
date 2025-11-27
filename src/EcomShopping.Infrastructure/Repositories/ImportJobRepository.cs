@@ -65,9 +65,4 @@ public class ImportJobRepository : IImportJobRepository
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync();
     }
-
-    public async Task<ImportJob?> GetJobWithDetailsAsync(int id)
-    {
-        return await _context.ImportJobs.FindAsync(id);
-    }
 }

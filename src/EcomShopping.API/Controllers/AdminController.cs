@@ -40,14 +40,7 @@ public class AdminController : ControllerBase
         try
         {
             var users = await _userRepository.GetAllAsync();
-            var userDtos = new List<UserDto>();
-
-            foreach (var user in users)
-            {
-                var userWithRoles = await _userRepository.GetWithRolesAsync(user.Id);
-                userDtos.Add(MapToUserDto(userWithRoles!));
-            }
-
+            var userDtos = users.Select(MapToUserDto).ToList();
             return Ok(userDtos);
         }
         catch (Exception ex)
@@ -451,12 +444,27 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// Simple password hashing for demonstration purposes only
-    /// In production, use a proper password hashing library like BCrypt or ASP.NET Core Identity
+    /// INSECURE password hashing for demonstration purposes ONLY.
+    /// 
+    /// CRITICAL SECURITY WARNING: This implementation is NOT production-ready!
+    /// SHA256 without salt is vulnerable to:
+    /// - Rainbow table attacks
+    /// - Dictionary attacks
+    /// - No key stretching (fast computation allows brute force)
+    /// 
+    /// For production use, implement one of these secure alternatives:
+    /// 1. ASP.NET Core Identity (recommended for full auth system)
+    /// 2. BCrypt.Net library (bcrypt algorithm)
+    /// 3. Argon2 (modern, memory-hard algorithm)
+    /// 4. PBKDF2 with high iteration count and unique salt per password
+    /// 
+    /// Example with BCrypt:
+    ///   using BCrypt.Net;
+    ///   var hashedPassword = BCrypt.HashPassword(password);
+    ///   var isValid = BCrypt.Verify(password, hashedPassword);
     /// </summary>
     private string HashPassword(string password)
     {
-        // WARNING: This is NOT secure! Use BCrypt, Argon2, or ASP.NET Core Identity in production
         using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
         return Convert.ToBase64String(hashedBytes);

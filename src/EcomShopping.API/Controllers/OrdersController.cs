@@ -36,49 +36,11 @@ public class OrdersController : ControllerBase
     {
         try
         {
-            IEnumerable<Order> orders;
-            
-            if (string.IsNullOrEmpty(userId))
-            {
-                orders = await _orderRepository.GetAllAsync();
-            }
-            else
-            {
-                orders = await _orderRepository.GetByUserIdAsync(userId);
-            }
+            // Use repository method for database-level filtering and pagination
+            var (items, totalCount) = await _orderRepository.GetFilteredOrdersAsync(
+                userId, status, startDate, endDate, orderNumber, page, pageSize);
 
-            // Apply filters
-            if (status.HasValue)
-            {
-                orders = orders.Where(o => o.Status == status.Value);
-            }
-
-            if (startDate.HasValue)
-            {
-                orders = orders.Where(o => o.OrderDate >= startDate.Value);
-            }
-
-            if (endDate.HasValue)
-            {
-                orders = orders.Where(o => o.OrderDate <= endDate.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(orderNumber))
-            {
-                orders = orders.Where(o => o.OrderNumber.Contains(orderNumber, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // Order by date descending
-            orders = orders.OrderByDescending(o => o.OrderDate);
-
-            // Apply pagination
-            var totalCount = orders.Count();
-            var pagedOrders = orders
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            var orderDtos = pagedOrders.Select(MapToOrderDto).ToList();
+            var orderDtos = items.Select(MapToOrderDto).ToList();
 
             return Ok(new
             {

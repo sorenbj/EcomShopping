@@ -58,7 +58,7 @@ public class FileImportController : ControllerBase
     {
         try
         {
-            var job = await _importJobRepository.GetJobWithDetailsAsync(id);
+            var job = await _importJobRepository.GetByIdAsync(id);
             if (job == null)
             {
                 return NotFound();
