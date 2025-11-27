@@ -53,10 +53,13 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICouponRepository, CouponRepository>();
 builder.Services.AddScoped<IRepository<Category>, CategoryRepository>();
 builder.Services.AddScoped<IStockMovementRepository, StockMovementRepository>();
+builder.Services.AddScoped<IStockReservationRepository, StockReservationRepository>();
+builder.Services.AddScoped<ILowStockEventRepository, LowStockEventRepository>();
 
 // Register services
 builder.Services.AddScoped<IPaymentProvider, FakePaymentProvider>();
 builder.Services.AddScoped<CheckoutService>();
+builder.Services.AddScoped<InventoryService>();
 
 // Register integration services
 builder.Services.AddSingleton<IntegrationProviderRegistry>();
@@ -69,6 +72,7 @@ builder.Services.AddSingleton(sp =>
     var registry = sp.GetRequiredService<IntegrationProviderRegistry>();
     
     // Register mock providers
+    registry.Register("erp_provider", new MockErpIntegration());
     registry.Register("mock-erp", new MockErpIntegration());
     registry.Register("mock-crm", new MockCrmIntegration());
     registry.Register("mock-shipping", new MockShippingProvider());

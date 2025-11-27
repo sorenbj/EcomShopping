@@ -19,6 +19,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<StockReservation> StockReservations => Set<StockReservation>();
+    public DbSet<LowStockEvent> LowStockEvents => Set<LowStockEvent>();
     public DbSet<ImportJob> ImportJobs => Set<ImportJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -180,6 +182,35 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Value).HasColumnType("decimal(18,2)");
             entity.Property(e => e.MinimumOrderAmount).HasColumnType("decimal(18,2)");
             entity.Property(e => e.MaximumDiscountAmount).HasColumnType("decimal(18,2)");
+        });
+
+        // StockReservation configuration
+        modelBuilder.Entity<StockReservation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SessionId).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.OrderNumber).HasMaxLength(100);
+            entity.HasIndex(e => e.SessionId);
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.HasOne(e => e.Product)
+                .WithMany(p => p.StockReservations)
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // LowStockEvent configuration
+        modelBuilder.Entity<LowStockEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ProductName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ProductSKU).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.AcknowledgedBy).HasMaxLength(200);
+            entity.HasIndex(e => e.IsAcknowledged);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasOne(e => e.Product)
+                .WithMany(p => p.LowStockEvents)
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

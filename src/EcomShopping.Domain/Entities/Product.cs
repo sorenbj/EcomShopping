@@ -10,6 +10,7 @@ public class Product
     public string SKU { get; set; } = string.Empty;
     public int? CategoryId { get; set; }
     public int StockQuantity { get; set; }
+    public int LowStockThreshold { get; set; } = 10;
     public bool IsActive { get; set; } = true;
     public List<string> Images { get; set; } = new();
     public Dictionary<string, string> Metadata { get; set; } = new();
@@ -21,4 +22,6 @@ public class Product
     public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
+    public ICollection<StockReservation> StockReservations { get; set; } = new List<StockReservation>();
+    public ICollection<LowStockEvent> LowStockEvents { get; set; } = new List<LowStockEvent>();
 }
