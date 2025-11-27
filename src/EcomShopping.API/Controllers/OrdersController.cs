@@ -25,20 +25,69 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Order>>> GetOrders([FromQuery] string? userId)
+    public async Task<ActionResult<IEnumerable<Order>>> GetOrders(
+        [FromQuery] string? userId, 
+        [FromQuery] OrderStatus? status,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        [FromQuery] string? orderNumber,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
         try
         {
+            IEnumerable<Order> orders;
+            
             if (string.IsNullOrEmpty(userId))
             {
-                var allOrders = await _orderRepository.GetAllAsync();
-                var allOrderDtos = allOrders.Select(MapToOrderDto).ToList();
-                return Ok(allOrderDtos);
+                orders = await _orderRepository.GetAllAsync();
+            }
+            else
+            {
+                orders = await _orderRepository.GetByUserIdAsync(userId);
             }
 
-            var orders = await _orderRepository.GetByUserIdAsync(userId);
-            var orderDtos = orders.Select(MapToOrderDto).ToList();
-            return Ok(orderDtos);
+            // Apply filters
+            if (status.HasValue)
+            {
+                orders = orders.Where(o => o.Status == status.Value);
+            }
+
+            if (startDate.HasValue)
+            {
+                orders = orders.Where(o => o.OrderDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                orders = orders.Where(o => o.OrderDate <= endDate.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(orderNumber))
+            {
+                orders = orders.Where(o => o.OrderNumber.Contains(orderNumber, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Order by date descending
+            orders = orders.OrderByDescending(o => o.OrderDate);
+
+            // Apply pagination
+            var totalCount = orders.Count();
+            var pagedOrders = orders
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var orderDtos = pagedOrders.Select(MapToOrderDto).ToList();
+
+            return Ok(new
+            {
+                items = orderDtos,
+                totalCount,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            });
         }
         catch (Exception ex)
         {
