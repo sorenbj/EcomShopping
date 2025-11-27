@@ -54,8 +54,8 @@ public class CheckoutApiService
                 return (false, null, "Failed to create order. Please try again later.");
             }
 
-            var order = await orderResponse.Content.ReadFromJsonAsync<OrderDto>();
-            return (true, order, null);
+            var checkoutResponse = await orderResponse.Content.ReadFromJsonAsync<CheckoutResponse>();
+            return (true, checkoutResponse?.Order, null);
         }
         catch (HttpRequestException ex)
         {
