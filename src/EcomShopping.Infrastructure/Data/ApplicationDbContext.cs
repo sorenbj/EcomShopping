@@ -214,6 +214,8 @@ public class ApplicationDbContext : DbContext
                 .WithMany(p => p.LowStockEvents)
                 .HasForeignKey(e => e.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // User configuration
         modelBuilder.Entity<User>(entity =>
         {
