@@ -55,7 +55,14 @@ public class CheckoutApiService
             }
 
             var checkoutResponse = await orderResponse.Content.ReadFromJsonAsync<CheckoutResponse>();
-            return (true, checkoutResponse?.Order, null);
+            
+            if (checkoutResponse == null || checkoutResponse.Order == null)
+            {
+                _logger.LogError("Failed to deserialize checkout response");
+                return (false, null, "Failed to process order response. Please try again.");
+            }
+            
+            return (true, checkoutResponse.Order, null);
         }
         catch (HttpRequestException ex)
         {
