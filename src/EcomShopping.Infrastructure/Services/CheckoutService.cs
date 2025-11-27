@@ -10,19 +10,25 @@ public class CheckoutService
     private readonly IProductRepository _productRepository;
     private readonly ICouponRepository _couponRepository;
     private readonly IPaymentProvider _paymentProvider;
+    private readonly IStockReservationRepository _stockReservationRepository;
+    private readonly InventoryService _inventoryService;
 
     public CheckoutService(
         ICartRepository cartRepository,
         IOrderRepository orderRepository,
         IProductRepository productRepository,
         ICouponRepository couponRepository,
-        IPaymentProvider paymentProvider)
+        IPaymentProvider paymentProvider,
+        IStockReservationRepository stockReservationRepository,
+        InventoryService inventoryService)
     {
         _cartRepository = cartRepository;
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _couponRepository = couponRepository;
         _paymentProvider = paymentProvider;
+        _stockReservationRepository = stockReservationRepository;
+        _inventoryService = inventoryService;
     }
 
     public async Task<CheckoutResult> ProcessCheckoutAsync(CheckoutData checkoutData)
@@ -149,12 +155,14 @@ public class CheckoutService
                 };
             }
 
-            if (product.StockQuantity < item.Quantity)
+            // Check available stock (actual stock minus active reservations)
+            var availableStock = await _stockReservationRepository.GetAvailableStockAsync(item.ProductId);
+            if (availableStock < item.Quantity)
             {
                 return new CheckoutResult
                 {
                     Success = false,
-                    ErrorMessage = $"Insufficient stock for {product.Name}. Only {product.StockQuantity} available."
+                    ErrorMessage = $"Insufficient stock for {product.Name}. Only {availableStock} available."
                 };
             }
         }
@@ -296,6 +304,10 @@ public class CheckoutService
             {
                 product.StockQuantity -= item.Quantity;
                 await _productRepository.UpdateAsync(product);
+
+                // Check for low stock and create event if needed
+                var availableStock = await _stockReservationRepository.GetAvailableStockAsync(product.Id);
+                await _inventoryService.CheckAndCreateLowStockEventAsync(product.Id, availableStock, product.LowStockThreshold);
             }
         }
     }

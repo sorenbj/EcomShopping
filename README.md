@@ -142,8 +142,12 @@ EcomShopping/
 - ✅ Stock movement tracking with audit trail
 - ✅ Inventory adjustments (Purchase, Sale, Adjustment, Return, Damage)
 - ✅ Real-time stock calculations
-- ✅ Low stock alerts foundation
+- ✅ **Stock reservation system during checkout (prevents overselling)**
+- ✅ **Available stock calculation (actual - reserved)**
+- ✅ **Low-stock alerts with configurable thresholds**
+- ✅ **ERP integration for inventory synchronization**
 - ✅ Movement reference tracking
+- ✅ Automatic expiration of stock reservations
 
 ### 🔌 Integration Engine
 - ✅ Modular provider architecture
@@ -300,6 +304,7 @@ Comprehensive guides are available in the `/docs` directory:
 | [Technology Stack](docs/Technology-Stack.md) | Technology choices and rationale |
 | [Database Schema](docs/Database-Schema.md) | Database design and EF Core migrations |
 | [Infrastructure Setup](docs/Infrastructure-Setup.md) | Environment setup and deployment |
+| [Inventory Management](docs/Inventory-Management.md) | Stock reservations, low-stock alerts, and ERP sync |
 | [CI/CD Pipeline](docs/CICD-Pipeline.md) | GitHub Actions workflow documentation |
 | [Integration Engine](docs/Integration-Engine-Guide.md) | Integration system developer guide |
 | [API Documentation](docs/API.md) | REST API endpoints and examples |
@@ -402,9 +407,9 @@ dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 
 ### Test Statistics
 
-- **Total Tests**: 26
-- **Unit Tests**: 26
-- **Integration Tests**: Ready for implementation
+- **Total Tests**: 67
+- **Unit Tests**: 62
+- **Integration Tests**: 5
 - **Success Rate**: 100%
 
 ### Writing Tests
@@ -520,6 +525,10 @@ Explore the full API documentation:
 | `/api/cart/items` | POST | Add item to cart |
 | `/api/checkout` | POST | Create order from cart |
 | `/api/orders` | GET | List user orders |
+| `/api/stock/adjust` | POST | Adjust product stock |
+| `/api/inventory/low-stock-alerts` | GET | Get low-stock alerts |
+| `/api/inventory/available-stock/{id}` | GET | Get available stock for product |
+| `/api/inventory/erp-sync` | POST | Sync stock from ERP |
 | `/api/integrations/providers` | GET | List integration providers |
 | `/api/imports/upload` | POST | Upload import file |
 
