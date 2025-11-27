@@ -24,6 +24,7 @@ public class CreateUserDto
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public List<int> RoleIds { get; set; } = new();
 }
 
 public class UpdateUserDto

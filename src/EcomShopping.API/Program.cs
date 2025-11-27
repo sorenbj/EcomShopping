@@ -146,6 +146,13 @@ static void SeedDatabase(ApplicationDbContext context)
     if (context.Products.Any())
         return;
 
+    // Add default roles
+    var adminRole = new Role { Id = 1, Name = "Admin", Description = "Administrator with full access to the admin panel", CreatedAt = DateTime.UtcNow };
+    var frontendUserRole = new Role { Id = 2, Name = "FrontendUser", Description = "Regular user with access to the storefront", CreatedAt = DateTime.UtcNow };
+
+    context.Roles.AddRange(adminRole, frontendUserRole);
+    context.SaveChanges();
+
     // Add categories
     var electronics = new Category { Id = 1, Name = "Electronics", Description = "Electronic devices and gadgets" };
     var clothing = new Category { Id = 2, Name = "Clothing", Description = "Apparel and fashion" };
