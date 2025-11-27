@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<products>
+    <product>
+        <Name>Webcam HD</Name>
+        <SKU>WEB-HD-004</SKU>
+        <Description>1080p HD webcam with built-in microphone</Description>
+        <Price>89.99</Price>
+        <StockQuantity>100</StockQuantity>
+        <CategoryName>Electronics</CategoryName>
+        <IsActive>true</IsActive>
+        <ImageUrl>https://via.placeholder.com/400x400?text=Webcam</ImageUrl>
+    </product>
+    <product>
+        <Name>Desk Lamp LED</Name>
+        <SKU>LAMP-LED-005</SKU>
+        <Description>Adjustable LED desk lamp with touch controls</Description>
+        <Price>34.99</Price>
+        <StockQuantity>75</StockQuantity>
+        <CategoryName>Home &amp; Garden</CategoryName>
+        <IsActive>true</IsActive>
+        <ImageUrl>https://via.placeholder.com/400x400?text=Desk+Lamp</ImageUrl>
+    </product>
+    <product>
+        <Name>Ergonomic Mouse Pad</Name>
+        <SKU>PAD-ERGO-006</SKU>
+        <Description>Gel wrist support mouse pad for comfort</Description>
+        <Price>19.99</Price>
+        <StockQuantity>250</StockQuantity>
+        <CategoryName>Electronics</CategoryName>
+        <IsActive>true</IsActive>
+        <ImageUrl>https://via.placeholder.com/400x400?text=Mouse+Pad</ImageUrl>
+    </product>
+</products>
