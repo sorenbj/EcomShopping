@@ -11,11 +11,30 @@
             <h1 class="display-6">User Management</h1>
         </div>
         <div class="col-md-6 text-end">
+            <button class="btn btn-primary me-2" @onclick="ShowCreateUserModal">
+                <i class="bi bi-plus-circle"></i> Add User
+            </button>
             <a href="/admin" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
         </div>
     </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+        </div>
+    }
 
     @if (isLoading)
     {
@@ -26,7 +45,7 @@
     else if (users.Any())
     {
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Users (@users.Count)</h5>
             </div>
             <div class="table-responsive">
@@ -41,6 +60,7 @@
                             <th>Status</th>
                             <th>Created</th>
                             <th>Last Login</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -84,6 +104,11 @@
                                         <small class="text-muted">Never</small>
                                     }
                                 </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowManageRolesModal(user)">
+                                        <i class="bi bi-person-badge"></i> Roles
+                                    </button>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -97,13 +122,132 @@
     }
 </div>
 
+<!-- Create User Modal -->
+@if (showCreateModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="btn-close" @onclick="HideCreateUserModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="newUser" OnValidSubmit="CreateUser">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <InputText class="form-control" @bind-Value="newUser.UserName" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText type="email" class="form-control" @bind-Value="newUser.Email" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <InputText type="password" class="form-control" @bind-Value="newUser.Password" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">First Name</label>
+                                <InputText class="form-control" @bind-Value="newUser.FirstName" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Name</label>
+                                <InputText class="form-control" @bind-Value="newUser.LastName" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <InputText class="form-control" @bind-Value="newUser.PhoneNumber" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Roles</label>
+                            @foreach (var role in availableRoles)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="role-@role.Id"
+                                           checked="@newUser.RoleIds.Contains(role.Id)"
+                                           @onchange="() => ToggleRole(newUser.RoleIds, role.Id)" />
+                                    <label class="form-check-label" for="role-@role.Id">
+                                        @role.Name - @role.Description
+                                    </label>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="HideCreateUserModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Create User
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Manage Roles Modal -->
+@if (showManageRolesModal && selectedUser != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Roles for @selectedUser.UserName</h5>
+                    <button type="button" class="btn-close" @onclick="HideManageRolesModal"></button>
+                </div>
+                <div class="modal-body">
+                    @foreach (var role in availableRoles)
+                    {
+                        var hasRole = selectedUser.Roles.Contains(role.Name);
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="user-role-@role.Id"
+                                   checked="@hasRole"
+                                   @onchange="async () => await ToggleUserRole(selectedUser, role, hasRole)" />
+                            <label class="form-check-label" for="user-role-@role.Id">
+                                <strong>@role.Name</strong> - @role.Description
+                            </label>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideManageRolesModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<UserDto> users = new();
+    private List<RoleDto> availableRoles = new();
     private bool isLoading = true;
+    private bool showCreateModal = false;
+    private bool showManageRolesModal = false;
+    private bool isSubmitting = false;
+    private CreateUserDto newUser = new();
+    private UserDto? selectedUser;
+    private string? errorMessage;
+    private string? successMessage;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadUsersAsync();
+        await LoadRolesAsync();
     }
 
     private async Task LoadUsersAsync()
@@ -112,5 +256,118 @@
         var data = await AdminApi.GetUsersAsync();
         users = data ?? new List<UserDto>();
         isLoading = false;
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        var data = await AdminApi.GetRolesAsync();
+        availableRoles = data ?? new List<RoleDto>();
+    }
+
+    private void ShowCreateUserModal()
+    {
+        newUser = new CreateUserDto();
+        showCreateModal = true;
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private void HideCreateUserModal()
+    {
+        showCreateModal = false;
+        newUser = new CreateUserDto();
+    }
+
+    private void ShowManageRolesModal(UserDto user)
+    {
+        selectedUser = user;
+        showManageRolesModal = true;
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private void HideManageRolesModal()
+    {
+        showManageRolesModal = false;
+        selectedUser = null;
+    }
+
+    private void ToggleRole(List<int> roleIds, int roleId)
+    {
+        if (roleIds.Contains(roleId))
+        {
+            roleIds.Remove(roleId);
+        }
+        else
+        {
+            roleIds.Add(roleId);
+        }
+    }
+
+    private async Task ToggleUserRole(UserDto user, RoleDto role, bool currentlyHasRole)
+    {
+        try
+        {
+            bool success;
+            if (currentlyHasRole)
+            {
+                success = await AdminApi.RemoveRoleFromUserAsync(user.Id, role.Id);
+                if (success)
+                {
+                    user.Roles.Remove(role.Name);
+                    successMessage = $"Role '{role.Name}' removed from user '{user.UserName}'";
+                }
+            }
+            else
+            {
+                success = await AdminApi.AssignRoleToUserAsync(user.Id, role.Id);
+                if (success)
+                {
+                    user.Roles.Add(role.Name);
+                    successMessage = $"Role '{role.Name}' assigned to user '{user.UserName}'";
+                }
+            }
+
+            if (!success)
+            {
+                errorMessage = "Failed to update user role. Please try again.";
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating role: {ex.Message}";
+        }
+    }
+
+    private async Task CreateUser()
+    {
+        try
+        {
+            isSubmitting = true;
+            errorMessage = null;
+            successMessage = null;
+
+            var result = await AdminApi.CreateUserAsync(newUser);
+            if (result != null)
+            {
+                successMessage = $"User '{result.UserName}' created successfully!";
+                await LoadUsersAsync();
+                HideCreateUserModal();
+            }
+            else
+            {
+                errorMessage = "Failed to create user. Please check the input and try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error creating user: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 }

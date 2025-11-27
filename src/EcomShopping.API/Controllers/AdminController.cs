@@ -119,7 +119,19 @@ public class AdminController : ControllerBase
             };
 
             var createdUser = await _userRepository.AddAsync(user);
-            var userDto = MapToUserDto(createdUser);
+
+            // Assign roles if provided
+            if (dto.RoleIds != null && dto.RoleIds.Any())
+            {
+                foreach (var roleId in dto.RoleIds)
+                {
+                    await _userRepository.AssignRoleAsync(createdUser.Id, roleId);
+                }
+            }
+
+            // Fetch user with roles to return
+            var userWithRoles = await _userRepository.GetWithRolesAsync(createdUser.Id);
+            var userDto = MapToUserDto(userWithRoles!);
             return CreatedAtAction(nameof(GetUser), new { id = createdUser.Id }, userDto);
         }
         catch (Exception ex)
@@ -361,6 +373,72 @@ public class AdminController : ControllerBase
         {
             _logger.LogError(ex, "Error retrieving users by role {RoleName}", roleName);
             return StatusCode(500, "An error occurred while retrieving users by role");
+        }
+    }
+
+    /// <summary>
+    /// Assign a role to a user
+    /// </summary>
+    /// <param name="userId">User ID</param>
+    /// <param name="roleId">Role ID</param>
+    /// <returns>No content</returns>
+    [HttpPost("users/{userId}/roles/{roleId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> AssignRoleToUser(int userId, int roleId)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            var role = await _roleRepository.GetByIdAsync(roleId);
+            if (role == null)
+            {
+                return NotFound("Role not found");
+            }
+
+            await _userRepository.AssignRoleAsync(userId, roleId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning role {RoleId} to user {UserId}", roleId, userId);
+            return StatusCode(500, "An error occurred while assigning the role");
+        }
+    }
+
+    /// <summary>
+    /// Remove a role from a user
+    /// </summary>
+    /// <param name="userId">User ID</param>
+    /// <param name="roleId">Role ID</param>
+    /// <returns>No content</returns>
+    [HttpDelete("users/{userId}/roles/{roleId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RemoveRoleFromUser(int userId, int roleId)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            await _userRepository.RemoveRoleAsync(userId, roleId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing role {RoleId} from user {UserId}", roleId, userId);
+            return StatusCode(500, "An error occurred while removing the role");
         }
     }
 

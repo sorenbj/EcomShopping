@@ -81,4 +81,34 @@ public class UserRepository : IUserRepository
             .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == userId);
     }
+
+    public async Task AssignRoleAsync(int userId, int roleId)
+    {
+        var existingUserRole = await _context.UserRoles
+            .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
+        
+        if (existingUserRole == null)
+        {
+            var userRole = new UserRole
+            {
+                UserId = userId,
+                RoleId = roleId,
+                AssignedAt = DateTime.UtcNow
+            };
+            _context.UserRoles.Add(userRole);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task RemoveRoleAsync(int userId, int roleId)
+    {
+        var userRole = await _context.UserRoles
+            .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
+        
+        if (userRole != null)
+        {
+            _context.UserRoles.Remove(userRole);
+            await _context.SaveChangesAsync();
+        }
+    }
 }

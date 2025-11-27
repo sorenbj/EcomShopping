@@ -127,6 +127,34 @@ public class AdminApiService
             return null;
         }
     }
+
+    public async Task<bool> AssignRoleToUserAsync(int userId, int roleId)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsync($"api/admin/users/{userId}/roles/{roleId}", null);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning role {RoleId} to user {UserId}", roleId, userId);
+            return false;
+        }
+    }
+
+    public async Task<bool> RemoveRoleFromUserAsync(int userId, int roleId)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"api/admin/users/{userId}/roles/{roleId}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing role {RoleId} from user {UserId}", roleId, userId);
+            return false;
+        }
+    }
 }
 
 /// <summary>
