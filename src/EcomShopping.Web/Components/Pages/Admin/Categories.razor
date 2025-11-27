@@ -1,0 +1,250 @@
+@page "/admin/categories"
+@rendermode InteractiveServer
+@inject CategoriesApiService CategoriesApi
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Category Management - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6">Category Management</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-primary" @onclick="ShowCreateModal">
+                <i class="bi bi-plus-circle"></i> Add Category
+            </button>
+            <a href="/admin" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (categories.Any())
+    {
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Parent Category</th>
+                            <th>Products</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var category in categories)
+                        {
+                            <tr>
+                                <td><strong>@category.Name</strong></td>
+                                <td>@category.Description</td>
+                                <td>
+                                    @if (category.ParentCategoryId.HasValue)
+                                    {
+                                        var parent = categories.FirstOrDefault(c => c.Id == category.ParentCategoryId);
+                                        <span>@parent?.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Root</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@category.Products.Count</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditCategory(category)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteCategory(category.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">No categories found. Create your first category!</div>
+    }
+</div>
+
+<!-- Category Modal -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(isEditMode ? "Edit Category" : "Create Category")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">Category Name *</label>
+                        <input type="text" class="form-control" @bind="editingCategory.Name" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" @bind="editingCategory.Description" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Parent Category</label>
+                        <select class="form-select" @bind="editingCategory.ParentCategoryId">
+                            <option value="">-- Root Category --</option>
+                            @foreach (var category in categories.Where(c => c.Id != editingCategory.Id))
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveCategory" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Category> categories = new();
+    private Category editingCategory = new();
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool isEditMode = false;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategoriesAsync();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        isLoading = true;
+        var data = await CategoriesApi.GetCategoriesAsync();
+        categories = data ?? new List<Category>();
+        isLoading = false;
+    }
+
+    private void ShowCreateModal()
+    {
+        editingCategory = new Category { CreatedAt = DateTime.UtcNow };
+        isEditMode = false;
+        errorMessage = string.Empty;
+        showModal = true;
+    }
+
+    private void EditCategory(Category category)
+    {
+        editingCategory = new Category
+        {
+            Id = category.Id,
+            Name = category.Name,
+            Description = category.Description,
+            ParentCategoryId = category.ParentCategoryId,
+            CreatedAt = category.CreatedAt
+        };
+        isEditMode = true;
+        errorMessage = string.Empty;
+        showModal = true;
+    }
+
+    private async Task SaveCategory()
+    {
+        if (string.IsNullOrWhiteSpace(editingCategory.Name))
+        {
+            errorMessage = "Category name is required.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (isEditMode)
+            {
+                editingCategory.UpdatedAt = DateTime.UtcNow;
+                var success = await CategoriesApi.UpdateCategoryAsync(editingCategory.Id, editingCategory);
+                if (success)
+                {
+                    await LoadCategoriesAsync();
+                    CloseModal();
+                }
+                else
+                {
+                    errorMessage = "Failed to update category.";
+                }
+            }
+            else
+            {
+                var result = await CategoriesApi.CreateCategoryAsync(editingCategory);
+                if (result != null)
+                {
+                    await LoadCategoriesAsync();
+                    CloseModal();
+                }
+                else
+                {
+                    errorMessage = "Failed to create category.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteCategory(int id)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this category?"))
+        {
+            var success = await CategoriesApi.DeleteCategoryAsync(id);
+            if (success)
+            {
+                await LoadCategoriesAsync();
+            }
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        editingCategory = new();
+        errorMessage = string.Empty;
+    }
+}
