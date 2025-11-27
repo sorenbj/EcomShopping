@@ -1,6 +1,8 @@
 using EcomShopping.Application.DTOs;
 using EcomShopping.Domain.Entities;
 using EcomShopping.Domain.Interfaces;
+using EcomShopping.FileImport.Core;
+using EcomShopping.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcomShopping.API.Controllers;
@@ -13,13 +15,16 @@ namespace EcomShopping.API.Controllers;
 public class FileImportController : ControllerBase
 {
     private readonly IImportJobRepository _importJobRepository;
+    private readonly FileImportOrchestrationService _orchestrationService;
     private readonly ILogger<FileImportController> _logger;
 
     public FileImportController(
         IImportJobRepository importJobRepository,
+        FileImportOrchestrationService orchestrationService,
         ILogger<FileImportController> logger)
     {
         _importJobRepository = importJobRepository;
+        _orchestrationService = orchestrationService;
         _logger = logger;
     }
 
@@ -233,6 +238,135 @@ public class FileImportController : ControllerBase
         {
             _logger.LogError(ex, "Error deleting import job {JobId}", id);
             return StatusCode(500, "An error occurred while deleting the import job");
+        }
+    }
+
+    /// <summary>
+    /// Upload a file and create import job
+    /// </summary>
+    /// <param name="file">File to upload</param>
+    /// <param name="targetTable">Target table for import</param>
+    /// <param name="createdBy">User creating the import</param>
+    /// <returns>Created import job with parsed data preview</returns>
+    [HttpPost("upload")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult> UploadFile(
+        IFormFile file,
+        [FromForm] string targetTable,
+        [FromForm] string? createdBy)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded");
+            }
+
+            var fileExtension = Path.GetExtension(file.FileName);
+            var supportedExtensions = new[] { ".xlsx", ".json", ".xml" };
+            
+            if (!supportedExtensions.Contains(fileExtension.ToLowerInvariant()))
+            {
+                return BadRequest($"File type {fileExtension} is not supported. Supported types: {string.Join(", ", supportedExtensions)}");
+            }
+
+            // Create import job
+            using var stream = file.OpenReadStream();
+            var job = await _orchestrationService.CreateImportJobAsync(
+                stream,
+                file.FileName,
+                fileExtension.TrimStart('.').ToUpperInvariant(),
+                createdBy);
+
+            // Parse file to get preview
+            stream.Position = 0;
+            var records = await _orchestrationService.ParseFileForJobAsync(
+                job.Id,
+                stream,
+                fileExtension);
+
+            var recordsList = records.ToList();
+            var availableFields = _orchestrationService.GetAvailableFields(recordsList);
+
+            return Ok(new
+            {
+                JobId = job.Id,
+                FileName = job.FileName,
+                TotalRecords = recordsList.Count,
+                AvailableFields = availableFields,
+                PreviewRecords = recordsList.Take(5)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading file");
+            return StatusCode(500, $"An error occurred while uploading the file: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Execute import with field mappings
+    /// </summary>
+    /// <param name="dto">Import execution configuration</param>
+    /// <returns>Import result</returns>
+    [HttpPost("execute")]
+    [ProducesResponseType(typeof(ImportResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ImportResultDto>> ExecuteImport([FromBody] ExecuteImportDto dto)
+    {
+        try
+        {
+            var job = await _importJobRepository.GetByIdAsync(dto.JobId);
+            if (job == null)
+            {
+                return NotFound($"Import job {dto.JobId} not found");
+            }
+
+            // TODO: In a real implementation, we would retrieve the parsed data from storage
+            // For now, we'll return an error indicating the file needs to be re-uploaded
+            return BadRequest("Import execution requires the parsed file data. Please re-upload the file.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error executing import for job {JobId}", dto.JobId);
+            return StatusCode(500, $"An error occurred while executing the import: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Get available import tables and their field mappings
+    /// </summary>
+    /// <returns>List of available import tables</returns>
+    [HttpGet("tables")]
+    [ProducesResponseType(typeof(IEnumerable<ImportTableInfoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public ActionResult<IEnumerable<ImportTableInfoDto>> GetAvailableTables()
+    {
+        try
+        {
+            var importers = _orchestrationService.GetAvailableImporters();
+            var tables = importers.Select(i => new ImportTableInfoDto
+            {
+                TableName = i.TableName,
+                DefaultFieldMappings = i.GetDefaultFieldMappings().Select(m => new FieldMappingDto
+                {
+                    SourceField = m.SourceField,
+                    DestinationField = m.DestinationField,
+                    IsRequired = m.IsRequired,
+                    DefaultValue = m.DefaultValue
+                }).ToList()
+            }).ToList();
+
+            return Ok(tables);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving available import tables");
+            return StatusCode(500, "An error occurred while retrieving available import tables");
         }
     }
 
