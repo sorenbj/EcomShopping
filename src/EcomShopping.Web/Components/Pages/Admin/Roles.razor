@@ -1,0 +1,326 @@
+@page "/admin/roles"
+@rendermode InteractiveServer
+@inject AdminApiService AdminApi
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Role Management - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6">Role Management</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-primary me-2" @onclick="ShowCreateModal">
+                <i class="bi bi-plus-circle"></i> Add Role
+            </button>
+            <a href="/admin" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (roles.Any())
+    {
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Roles (@roles.Count)</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var role in roles)
+                        {
+                            <tr>
+                                <td><strong>@role.Name</strong></td>
+                                <td>@role.Description</td>
+                                <td><small>@role.CreatedAt.ToString("d")</small></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEditModal(role)">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ShowDeleteModal(role)">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">No roles found. Create your first role!</div>
+    }
+</div>
+
+<!-- Create/Edit Role Modal -->
+@if (showModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(isEditMode ? "Edit Role" : "Create Role")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Role Name *</label>
+                        <input type="text" class="form-control" @bind="roleName" placeholder="e.g., Administrator, Manager, Customer" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description *</label>
+                        <textarea class="form-control" @bind="roleDescription" rows="3" placeholder="Describe the purpose of this role"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveRole" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        @(isEditMode ? "Update" : "Create") Role
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Role Confirmation Modal -->
+@if (showDeleteModal && selectedRole != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Delete Role</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the role <strong>@selectedRole.Name</strong>?</p>
+                    <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> This action cannot be undone!</p>
+                    <p class="text-muted"><small>Note: Users currently assigned to this role will lose this role assignment.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteModal">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="DeleteRole" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Delete Role
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<RoleDto> roles = new();
+    private string roleName = string.Empty;
+    private string roleDescription = string.Empty;
+    private RoleDto? selectedRole;
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool showDeleteModal = false;
+    private bool isEditMode = false;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        isLoading = true;
+        var data = await AdminApi.GetRolesAsync();
+        roles = data ?? new List<RoleDto>();
+        isLoading = false;
+    }
+
+    private void ShowCreateModal()
+    {
+        roleName = string.Empty;
+        roleDescription = string.Empty;
+        isEditMode = false;
+        errorMessage = null;
+        successMessage = null;
+        showModal = true;
+    }
+
+    private void ShowEditModal(RoleDto role)
+    {
+        selectedRole = role;
+        roleName = role.Name;
+        roleDescription = role.Description;
+        isEditMode = true;
+        errorMessage = null;
+        successMessage = null;
+        showModal = true;
+    }
+
+    private void ShowDeleteModal(RoleDto role)
+    {
+        selectedRole = role;
+        errorMessage = null;
+        successMessage = null;
+        showDeleteModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        roleName = string.Empty;
+        roleDescription = string.Empty;
+        selectedRole = null;
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        selectedRole = null;
+    }
+
+    private async Task SaveRole()
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+        {
+            errorMessage = "Role name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(roleDescription))
+        {
+            errorMessage = "Role description is required.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            if (isEditMode && selectedRole != null)
+            {
+                var updateDto = new UpdateRoleDto
+                {
+                    Name = roleName,
+                    Description = roleDescription
+                };
+
+                var success = await AdminApi.UpdateRoleAsync(selectedRole.Id, updateDto);
+                if (success)
+                {
+                    successMessage = $"Role '{roleName}' updated successfully!";
+                    await LoadRolesAsync();
+                    CloseModal();
+                }
+                else
+                {
+                    errorMessage = "Failed to update role. Please check the input and try again.";
+                }
+            }
+            else
+            {
+                var createDto = new CreateRoleDto
+                {
+                    Name = roleName,
+                    Description = roleDescription
+                };
+
+                var result = await AdminApi.CreateRoleAsync(createDto);
+                if (result != null)
+                {
+                    successMessage = $"Role '{result.Name}' created successfully!";
+                    await LoadRolesAsync();
+                    CloseModal();
+                }
+                else
+                {
+                    errorMessage = "Failed to create role. Please check the input and try again.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving role: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteRole()
+    {
+        if (selectedRole == null) return;
+
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var success = await AdminApi.DeleteRoleAsync(selectedRole.Id);
+            if (success)
+            {
+                successMessage = $"Role '{selectedRole.Name}' deleted successfully!";
+                await LoadRolesAsync();
+                CloseDeleteModal();
+            }
+            else
+            {
+                errorMessage = "Failed to delete role. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting role: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}
