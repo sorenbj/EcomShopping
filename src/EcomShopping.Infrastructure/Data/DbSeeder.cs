@@ -1,4 +1,6 @@
 using EcomShopping.Domain.Entities;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace EcomShopping.Infrastructure.Data;
 
@@ -32,6 +34,77 @@ public static class DbSeeder
         context.Roles.AddRange(adminRole, frontendUserRole);
         context.SaveChanges();
         Console.WriteLine("✓ Roles seeded");
+
+        // Add sample users
+        var adminUser = new User
+        {
+            Email = "admin@ecomshopping.com",
+            UserName = "admin",
+            PasswordHash = HashPassword("Admin@123"),
+            FirstName = "Admin",
+            LastName = "User",
+            PhoneNumber = "+1-555-0100",
+            IsActive = true,
+            EmailConfirmed = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var johnDoe = new User
+        {
+            Email = "john.doe@example.com",
+            UserName = "johndoe",
+            PasswordHash = HashPassword("Password@123"),
+            FirstName = "John",
+            LastName = "Doe",
+            PhoneNumber = "+1-555-0101",
+            IsActive = true,
+            EmailConfirmed = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var janeDoe = new User
+        {
+            Email = "jane.smith@example.com",
+            UserName = "janesmith",
+            PasswordHash = HashPassword("Password@123"),
+            FirstName = "Jane",
+            LastName = "Smith",
+            PhoneNumber = "+1-555-0102",
+            IsActive = true,
+            EmailConfirmed = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var testUser = new User
+        {
+            Email = "test@example.com",
+            UserName = "testuser",
+            PasswordHash = HashPassword("Test@123"),
+            FirstName = "Test",
+            LastName = "User",
+            PhoneNumber = "+1-555-0103",
+            IsActive = true,
+            EmailConfirmed = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.Users.AddRange(adminUser, johnDoe, janeDoe, testUser);
+        context.SaveChanges();
+        Console.WriteLine("✓ Users seeded (4 users)");
+
+        // Assign roles to users
+        var userRoles = new[]
+        {
+            new UserRole { UserId = adminUser.Id, RoleId = adminRole.Id, AssignedAt = DateTime.UtcNow },
+            new UserRole { UserId = adminUser.Id, RoleId = frontendUserRole.Id, AssignedAt = DateTime.UtcNow },
+            new UserRole { UserId = johnDoe.Id, RoleId = frontendUserRole.Id, AssignedAt = DateTime.UtcNow },
+            new UserRole { UserId = janeDoe.Id, RoleId = frontendUserRole.Id, AssignedAt = DateTime.UtcNow },
+            new UserRole { UserId = testUser.Id, RoleId = frontendUserRole.Id, AssignedAt = DateTime.UtcNow }
+        };
+
+        context.UserRoles.AddRange(userRoles);
+        context.SaveChanges();
+        Console.WriteLine("✓ User roles assigned");
 
         // Add categories (let SQL Server auto-generate IDs)
         var electronics = new Category { Name = "Electronics", Description = "Electronic devices and gadgets" };
@@ -264,5 +337,24 @@ public static class DbSeeder
         Console.WriteLine("✓ Coupons seeded");
 
         Console.WriteLine("✅ Database seeding completed successfully!");
+        Console.WriteLine("\n📋 Sample User Credentials:");
+        Console.WriteLine("   Admin User:");
+        Console.WriteLine("     Email: admin@ecomshopping.com");
+        Console.WriteLine("     Password: Admin@123");
+        Console.WriteLine("   Regular Users:");
+        Console.WriteLine("     Email: john.doe@example.com | Password: Password@123");
+        Console.WriteLine("     Email: jane.smith@example.com | Password: Password@123");
+        Console.WriteLine("     Email: test@example.com | Password: Test@123");
+    }
+
+    /// <summary>
+    /// Simple password hashing using SHA256 (for demo purposes only)
+    /// In production, use a proper password hashing library like BCrypt or ASP.NET Core Identity
+    /// </summary>
+    private static string HashPassword(string password)
+    {
+        using var sha256 = SHA256.Create();
+        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        return Convert.ToBase64String(hashedBytes);
     }
 }

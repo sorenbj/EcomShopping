@@ -9,8 +9,8 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     {
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         
-        // Use SQL Server for migrations (design time only)
-        optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=EcomShoppingDb;Trusted_Connection=True;MultipleActiveResultSets=true");
+        // Use SQL Server Express for migrations (design time only)
+        optionsBuilder.UseSqlServer("Server=localhost\\SQLEXPRESS;Database=EcomShoppingDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True");
         
         return new ApplicationDbContext(optionsBuilder.Options);
     }
