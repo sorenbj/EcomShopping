@@ -105,8 +105,14 @@
                                     }
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowManageRolesModal(user)">
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowManageRolesModal(user)">
                                         <i class="bi bi-person-badge"></i> Roles
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning me-1" @onclick="() => ShowEditUserModal(user)">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ShowDeleteUserModal(user)">
+                                        <i class="bi bi-trash"></i> Delete
                                     </button>
                                 </td>
                             </tr>
@@ -200,6 +206,95 @@
     </div>
 }
 
+<!-- Edit User Modal -->
+@if (showEditModal && selectedUser != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User - @selectedUser.UserName</h5>
+                    <button type="button" class="btn-close" @onclick="HideEditUserModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="editUser" OnValidSubmit="UpdateUser">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label for="editEmail" class="form-label">Email</label>
+                            <InputText id="editEmail" type="email" class="form-control" @bind-Value="editUser.Email" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editFirstName" class="form-label">First Name</label>
+                                <InputText id="editFirstName" class="form-control" @bind-Value="editUser.FirstName" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editLastName" class="form-label">Last Name</label>
+                                <InputText id="editLastName" class="form-control" @bind-Value="editUser.LastName" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editPhoneNumber" class="form-label">Phone Number</label>
+                            <InputText id="editPhoneNumber" class="form-control" @bind-Value="editUser.PhoneNumber" />
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <InputCheckbox class="form-check-input" id="isActive" @bind-Value="editUser.IsActive" />
+                            <label class="form-check-label" for="isActive">
+                                Active
+                            </label>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="HideEditUserModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Update User
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete User Confirmation Modal -->
+@if (showDeleteModal && selectedUser != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Delete User</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="HideDeleteUserModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the user <strong>@selectedUser.UserName</strong> (@selectedUser.Email)?</p>
+                    <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> This action cannot be undone!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideDeleteUserModal">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="DeleteUser" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Delete User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Manage Roles Modal -->
 @if (showManageRolesModal && selectedUser != null)
 {
@@ -237,9 +332,12 @@
     private List<RoleDto> availableRoles = new();
     private bool isLoading = true;
     private bool showCreateModal = false;
+    private bool showEditModal = false;
+    private bool showDeleteModal = false;
     private bool showManageRolesModal = false;
     private bool isSubmitting = false;
     private CreateUserDto newUser = new();
+    private UpdateUserDto editUser = new();
     private UserDto? selectedUser;
     private string? errorMessage;
     private string? successMessage;
@@ -276,6 +374,43 @@
     {
         showCreateModal = false;
         newUser = new CreateUserDto();
+    }
+
+    private void ShowEditUserModal(UserDto user)
+    {
+        selectedUser = user;
+        editUser = new UpdateUserDto
+        {
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            PhoneNumber = user.PhoneNumber,
+            IsActive = user.IsActive
+        };
+        showEditModal = true;
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private void HideEditUserModal()
+    {
+        showEditModal = false;
+        selectedUser = null;
+        editUser = new UpdateUserDto();
+    }
+
+    private void ShowDeleteUserModal(UserDto user)
+    {
+        selectedUser = user;
+        showDeleteModal = true;
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private void HideDeleteUserModal()
+    {
+        showDeleteModal = false;
+        selectedUser = null;
     }
 
     private void ShowManageRolesModal(UserDto user)
@@ -364,6 +499,70 @@
         catch (Exception ex)
         {
             errorMessage = $"Error creating user: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task UpdateUser()
+    {
+        try
+        {
+            isSubmitting = true;
+            errorMessage = null;
+            successMessage = null;
+
+            if (selectedUser == null) return;
+
+            var success = await AdminApi.UpdateUserAsync(selectedUser.Id, editUser);
+            if (success)
+            {
+                successMessage = $"User '{selectedUser.UserName}' updated successfully!";
+                await LoadUsersAsync();
+                HideEditUserModal();
+            }
+            else
+            {
+                errorMessage = "Failed to update user. Please check the input and try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating user: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task DeleteUser()
+    {
+        try
+        {
+            isSubmitting = true;
+            errorMessage = null;
+            successMessage = null;
+
+            if (selectedUser == null) return;
+
+            var success = await AdminApi.DeleteUserAsync(selectedUser.Id);
+            if (success)
+            {
+                successMessage = $"User '{selectedUser.UserName}' deleted successfully!";
+                await LoadUsersAsync();
+                HideDeleteUserModal();
+            }
+            else
+            {
+                errorMessage = "Failed to delete user. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting user: {ex.Message}";
         }
         finally
         {
