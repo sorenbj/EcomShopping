@@ -128,6 +128,49 @@ public class AdminApiService
         }
     }
 
+    public async Task<RoleDto?> CreateRoleAsync(CreateRoleDto role)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/admin/roles", role);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<RoleDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating role");
+            return null;
+        }
+    }
+
+    public async Task<bool> UpdateRoleAsync(int id, UpdateRoleDto role)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"api/admin/roles/{id}", role);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating role {RoleId}", id);
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteRoleAsync(int id)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"api/admin/roles/{id}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting role {RoleId}", id);
+            return false;
+        }
+    }
+
     public async Task<bool> AssignRoleToUserAsync(int userId, int roleId)
     {
         try

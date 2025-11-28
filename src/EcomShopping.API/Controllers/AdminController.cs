@@ -260,22 +260,28 @@ public class AdminController : ControllerBase
     /// <summary>
     /// Create a new role
     /// </summary>
-    /// <param name="role">Role data</param>
+    /// <param name="dto">Role data</param>
     /// <returns>Created role</returns>
     [HttpPost("roles")]
     [ProducesResponseType(typeof(RoleDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<RoleDto>> CreateRole(Role role)
+    public async Task<ActionResult<RoleDto>> CreateRole(CreateRoleDto dto)
     {
         try
         {
             // Check if role name already exists
-            var existingRole = await _roleRepository.GetByNameAsync(role.Name);
+            var existingRole = await _roleRepository.GetByNameAsync(dto.Name);
             if (existingRole != null)
             {
                 return BadRequest("Role name already exists");
             }
+
+            var role = new Role
+            {
+                Name = dto.Name,
+                Description = dto.Description
+            };
 
             var createdRole = await _roleRepository.AddAsync(role);
             var roleDto = MapToRoleDto(createdRole);
@@ -292,29 +298,27 @@ public class AdminController : ControllerBase
     /// Update a role
     /// </summary>
     /// <param name="id">Role ID</param>
-    /// <param name="role">Role update data</param>
+    /// <param name="dto">Role update data</param>
     /// <returns>No content</returns>
     [HttpPut("roles/{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> UpdateRole(int id, Role role)
+    public async Task<IActionResult> UpdateRole(int id, UpdateRoleDto dto)
     {
         try
         {
-            if (id != role.Id)
-            {
-                return BadRequest("Role ID mismatch");
-            }
-
             var existingRole = await _roleRepository.GetByIdAsync(id);
             if (existingRole == null)
             {
                 return NotFound();
             }
 
-            await _roleRepository.UpdateAsync(role);
+            existingRole.Name = dto.Name;
+            existingRole.Description = dto.Description;
+
+            await _roleRepository.UpdateAsync(existingRole);
             return NoContent();
         }
         catch (Exception ex)
