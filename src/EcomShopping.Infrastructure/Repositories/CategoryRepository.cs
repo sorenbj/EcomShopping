@@ -40,8 +40,18 @@ public class CategoryRepository : IRepository<Category>
 
     public async Task UpdateAsync(Category entity)
     {
-        entity.UpdatedAt = DateTime.UtcNow;
-        _context.Categories.Update(entity);
+        var existingCategory = await _context.Categories.FindAsync(entity.Id);
+        if (existingCategory == null)
+        {
+            throw new InvalidOperationException($"Category with ID {entity.Id} not found.");
+        }
+
+        // Update only the scalar properties
+        existingCategory.Name = entity.Name;
+        existingCategory.Description = entity.Description;
+        existingCategory.ParentCategoryId = entity.ParentCategoryId;
+        existingCategory.UpdatedAt = DateTime.UtcNow;
+
         await _context.SaveChangesAsync();
     }
 

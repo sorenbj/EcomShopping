@@ -128,4 +128,77 @@ public class CategoryRepositoryTests : IDisposable
         result.Id.Should().BeGreaterThan(0);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldUpdateCategory()
+    {
+        // Arrange
+        var category = new Category
+        {
+            Name = "Electronics",
+            Description = "Electronic devices",
+            CreatedAt = DateTime.UtcNow
+        };
+        await _repository.AddAsync(category);
+
+        // Act
+        var updatedCategory = new Category
+        {
+            Id = category.Id,
+            Name = "Updated Electronics",
+            Description = "Updated description",
+            ParentCategoryId = null,
+            CreatedAt = category.CreatedAt
+        };
+        await _repository.UpdateAsync(updatedCategory);
+
+        // Assert
+        var result = await _repository.GetByIdAsync(category.Id);
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Updated Electronics");
+        result.Description.Should().Be("Updated description");
+        result.UpdatedAt.Should().NotBeNull();
+        result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldUpdateParentCategoryId()
+    {
+        // Arrange
+        var parentCategory = new Category
+        {
+            Name = "Electronics",
+            Description = "Electronic devices",
+            CreatedAt = DateTime.UtcNow
+        };
+        await _repository.AddAsync(parentCategory);
+
+        var childCategory = new Category
+        {
+            Name = "Laptops",
+            Description = "Laptop computers",
+            CreatedAt = DateTime.UtcNow
+        };
+        await _repository.AddAsync(childCategory);
+
+        // Act - Update to add parent category relationship
+        var updatedCategory = new Category
+        {
+            Id = childCategory.Id,
+            Name = "Gaming Laptops",
+            Description = "High-performance gaming laptops",
+            ParentCategoryId = parentCategory.Id,
+            CreatedAt = childCategory.CreatedAt
+        };
+        await _repository.UpdateAsync(updatedCategory);
+
+        // Assert
+        var result = await _repository.GetByIdAsync(childCategory.Id);
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Gaming Laptops");
+        result.Description.Should().Be("High-performance gaming laptops");
+        result.ParentCategoryId.Should().Be(parentCategory.Id);
+        result.ParentCategory.Should().NotBeNull();
+        result.ParentCategory!.Name.Should().Be("Electronics");
+    }
 }
