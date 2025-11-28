@@ -222,24 +222,24 @@
                         <ValidationSummary class="text-danger" />
 
                         <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <InputText type="email" class="form-control" @bind-Value="editUser.Email" />
+                            <label for="editEmail" class="form-label">Email</label>
+                            <InputText id="editEmail" type="email" class="form-control" @bind-Value="editUser.Email" />
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">First Name</label>
-                                <InputText class="form-control" @bind-Value="editUser.FirstName" />
+                                <label for="editFirstName" class="form-label">First Name</label>
+                                <InputText id="editFirstName" class="form-control" @bind-Value="editUser.FirstName" />
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Last Name</label>
-                                <InputText class="form-control" @bind-Value="editUser.LastName" />
+                                <label for="editLastName" class="form-label">Last Name</label>
+                                <InputText id="editLastName" class="form-control" @bind-Value="editUser.LastName" />
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Phone Number</label>
-                            <InputText class="form-control" @bind-Value="editUser.PhoneNumber" />
+                            <label for="editPhoneNumber" class="form-label">Phone Number</label>
+                            <InputText id="editPhoneNumber" class="form-control" @bind-Value="editUser.PhoneNumber" />
                         </div>
 
                         <div class="mb-3 form-check">
@@ -248,18 +248,17 @@
                                 Active
                             </label>
                         </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" @onclick="HideEditUserModal">Cancel</button>
-                            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                                @if (isSubmitting)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2"></span>
-                                }
-                                Update User
-                            </button>
-                        </div>
                     </EditForm>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideEditUserModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting" @onclick="UpdateUser">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Update User
+                    </button>
                 </div>
             </div>
         </div>
