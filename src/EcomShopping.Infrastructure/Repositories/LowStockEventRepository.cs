@@ -17,14 +17,12 @@ public class LowStockEventRepository : ILowStockEventRepository
     public async Task<LowStockEvent?> GetByIdAsync(int id)
     {
         return await _context.LowStockEvents
-            .Include(e => e.Product)
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 
     public async Task<IEnumerable<LowStockEvent>> GetAllAsync()
     {
         return await _context.LowStockEvents
-            .Include(e => e.Product)
             .OrderByDescending(e => e.CreatedAt)
             .ToListAsync();
     }
@@ -32,7 +30,6 @@ public class LowStockEventRepository : ILowStockEventRepository
     public async Task<IEnumerable<LowStockEvent>> GetUnacknowledgedAsync()
     {
         return await _context.LowStockEvents
-            .Include(e => e.Product)
             .Where(e => !e.IsAcknowledged)
             .OrderByDescending(e => e.CreatedAt)
             .ToListAsync();
@@ -41,7 +38,6 @@ public class LowStockEventRepository : ILowStockEventRepository
     public async Task<IEnumerable<LowStockEvent>> GetByProductIdAsync(int productId)
     {
         return await _context.LowStockEvents
-            .Include(e => e.Product)
             .Where(e => e.ProductId == productId)
             .OrderByDescending(e => e.CreatedAt)
             .ToListAsync();
