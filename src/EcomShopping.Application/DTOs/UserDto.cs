@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace EcomShopping.Application.DTOs;
 
 public class UserDto
@@ -46,13 +48,23 @@ public class RoleDto
 
 public class CreateRoleDto
 {
+    [Required(ErrorMessage = "Role name is required")]
+    [StringLength(100, ErrorMessage = "Role name cannot exceed 100 characters")]
     public string Name { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Role description is required")]
+    [StringLength(500, ErrorMessage = "Role description cannot exceed 500 characters")]
     public string Description { get; set; } = string.Empty;
 }
 
 public class UpdateRoleDto
 {
+    [Required(ErrorMessage = "Role name is required")]
+    [StringLength(100, ErrorMessage = "Role name cannot exceed 100 characters")]
     public string Name { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Role description is required")]
+    [StringLength(500, ErrorMessage = "Role description cannot exceed 500 characters")]
     public string Description { get; set; } = string.Empty;
 }
 

@@ -99,12 +99,12 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Role Name *</label>
-                        <input type="text" class="form-control" @bind="editingRole.Name" placeholder="e.g., Administrator, Manager, Customer" />
+                        <input type="text" class="form-control" @bind="roleName" placeholder="e.g., Administrator, Manager, Customer" />
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Description *</label>
-                        <textarea class="form-control" @bind="editingRole.Description" rows="3" placeholder="Describe the purpose of this role"></textarea>
+                        <textarea class="form-control" @bind="roleDescription" rows="3" placeholder="Describe the purpose of this role"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -154,7 +154,8 @@
 
 @code {
     private List<RoleDto> roles = new();
-    private CreateRoleDto editingRole = new();
+    private string roleName = string.Empty;
+    private string roleDescription = string.Empty;
     private RoleDto? selectedRole;
     private bool isLoading = true;
     private bool showModal = false;
@@ -179,7 +180,8 @@
 
     private void ShowCreateModal()
     {
-        editingRole = new CreateRoleDto();
+        roleName = string.Empty;
+        roleDescription = string.Empty;
         isEditMode = false;
         errorMessage = null;
         successMessage = null;
@@ -189,11 +191,8 @@
     private void ShowEditModal(RoleDto role)
     {
         selectedRole = role;
-        editingRole = new CreateRoleDto
-        {
-            Name = role.Name,
-            Description = role.Description
-        };
+        roleName = role.Name;
+        roleDescription = role.Description;
         isEditMode = true;
         errorMessage = null;
         successMessage = null;
@@ -211,7 +210,8 @@
     private void CloseModal()
     {
         showModal = false;
-        editingRole = new CreateRoleDto();
+        roleName = string.Empty;
+        roleDescription = string.Empty;
         selectedRole = null;
     }
 
@@ -223,13 +223,13 @@
 
     private async Task SaveRole()
     {
-        if (string.IsNullOrWhiteSpace(editingRole.Name))
+        if (string.IsNullOrWhiteSpace(roleName))
         {
             errorMessage = "Role name is required.";
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(editingRole.Description))
+        if (string.IsNullOrWhiteSpace(roleDescription))
         {
             errorMessage = "Role description is required.";
             return;
@@ -245,14 +245,14 @@
             {
                 var updateDto = new UpdateRoleDto
                 {
-                    Name = editingRole.Name,
-                    Description = editingRole.Description
+                    Name = roleName,
+                    Description = roleDescription
                 };
 
                 var success = await AdminApi.UpdateRoleAsync(selectedRole.Id, updateDto);
                 if (success)
                 {
-                    successMessage = $"Role '{editingRole.Name}' updated successfully!";
+                    successMessage = $"Role '{roleName}' updated successfully!";
                     await LoadRolesAsync();
                     CloseModal();
                 }
@@ -263,7 +263,13 @@
             }
             else
             {
-                var result = await AdminApi.CreateRoleAsync(editingRole);
+                var createDto = new CreateRoleDto
+                {
+                    Name = roleName,
+                    Description = roleDescription
+                };
+
+                var result = await AdminApi.CreateRoleAsync(createDto);
                 if (result != null)
                 {
                     successMessage = $"Role '{result.Name}' created successfully!";

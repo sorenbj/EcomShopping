@@ -315,6 +315,13 @@ public class AdminController : ControllerBase
                 return NotFound();
             }
 
+            // Check if another role with the same name already exists
+            var roleWithSameName = await _roleRepository.GetByNameAsync(dto.Name);
+            if (roleWithSameName != null && roleWithSameName.Id != id)
+            {
+                return BadRequest("Role name already exists");
+            }
+
             existingRole.Name = dto.Name;
             existingRole.Description = dto.Description;
 
