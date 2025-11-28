@@ -104,10 +104,30 @@ public class InventoryService
         var productIds = productList.Select(p => p.Id).ToList();
         var availableStockMap = await _stockReservationRepository.GetAvailableStockBatchAsync(productIds);
 
-        foreach (var product in productList)
+        // Get products that already have recent events in a single batch query
+        var productIdsWithRecentEvents = await _lowStockEventRepository.GetProductIdsWithRecentEventsAsync(productIds, 24);
+
+        // Filter products that need low stock events
+        var productsNeedingEvents = productList.Where(product =>
         {
             var availableStock = availableStockMap.TryGetValue(product.Id, out var stock) ? stock : product.StockQuantity;
-            await CheckAndCreateLowStockEventAsync(product.Id, availableStock, product.LowStockThreshold);
+            return availableStock <= product.LowStockThreshold && !productIdsWithRecentEvents.Contains(product.Id);
+        }).ToList();
+
+        // Create events for products that need them
+        foreach (var product in productsNeedingEvents)
+        {
+            var availableStock = availableStockMap.TryGetValue(product.Id, out var stock) ? stock : product.StockQuantity;
+            
+            await _lowStockEventRepository.CreateEventAsync(
+                product.Id,
+                product.Name,
+                product.SKU,
+                availableStock,
+                product.LowStockThreshold);
+            
+            _logger.LogWarning("Low stock alert created for product {ProductName} (SKU: {SKU}). Available: {AvailableStock}, Threshold: {Threshold}",
+                product.Name, product.SKU, availableStock, product.LowStockThreshold);
         }
     }
 
@@ -123,17 +143,33 @@ public class InventoryService
             
             if (!hasRecentEvent)
             {
-                var product = await _productRepository.GetByIdAsync(productId);
-                if (product != null)
-                {
-                    await _lowStockEventRepository.CreateEventAsync(
-                        productId,
-                        availableStock,
-                        threshold);
-                    
-                    _logger.LogWarning("Low stock alert created for product {ProductName} (SKU: {SKU}). Available: {AvailableStock}, Threshold: {Threshold}",
-                        product.Name, product.SKU, availableStock, threshold);
-                }
+                // Use the existing CreateEventAsync which will load the product
+                await _lowStockEventRepository.CreateEventAsync(productId, availableStock, threshold);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check if stock is low and create event if needed with product info (optimized to avoid extra query)
+    /// </summary>
+    public async Task CheckAndCreateLowStockEventAsync(int productId, string productName, string productSku, int availableStock, int threshold)
+    {
+        if (availableStock <= threshold)
+        {
+            // Check if we've already created an event recently (avoid spam)
+            var hasRecentEvent = await _lowStockEventRepository.HasRecentEventAsync(productId, 24);
+            
+            if (!hasRecentEvent)
+            {
+                await _lowStockEventRepository.CreateEventAsync(
+                    productId,
+                    productName,
+                    productSku,
+                    availableStock,
+                    threshold);
+                
+                _logger.LogWarning("Low stock alert created for product {ProductName} (SKU: {SKU}). Available: {AvailableStock}, Threshold: {Threshold}",
+                    productName, productSku, availableStock, threshold);
             }
         }
     }

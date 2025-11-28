@@ -56,11 +56,16 @@ public class LowStockEventRepository : ILowStockEventRepository
             throw new InvalidOperationException($"Product with ID {productId} not found");
         }
 
+        return await CreateEventAsync(productId, product.Name, product.SKU, currentStock, threshold);
+    }
+
+    public async Task<LowStockEvent> CreateEventAsync(int productId, string productName, string productSku, int currentStock, int threshold)
+    {
         var lowStockEvent = new LowStockEvent
         {
             ProductId = productId,
-            ProductName = product.Name,
-            ProductSKU = product.SKU,
+            ProductName = productName,
+            ProductSKU = productSku,
             CurrentStock = currentStock,
             Threshold = threshold,
             CreatedAt = DateTime.UtcNow,
@@ -90,6 +95,24 @@ public class LowStockEventRepository : ILowStockEventRepository
         var cutoffTime = DateTime.UtcNow.AddHours(-hoursThreshold);
         return await _context.LowStockEvents
             .AnyAsync(e => e.ProductId == productId && e.CreatedAt >= cutoffTime);
+    }
+
+    public async Task<HashSet<int>> GetProductIdsWithRecentEventsAsync(IEnumerable<int> productIds, int hoursThreshold = 24)
+    {
+        var productIdList = productIds.ToList();
+        if (!productIdList.Any())
+        {
+            return new HashSet<int>();
+        }
+
+        var cutoffTime = DateTime.UtcNow.AddHours(-hoursThreshold);
+        var productsWithRecentEvents = await _context.LowStockEvents
+            .Where(e => productIdList.Contains(e.ProductId) && e.CreatedAt >= cutoffTime)
+            .Select(e => e.ProductId)
+            .Distinct()
+            .ToListAsync();
+
+        return new HashSet<int>(productsWithRecentEvents);
     }
 
     public async Task<LowStockEvent> AddAsync(LowStockEvent entity)

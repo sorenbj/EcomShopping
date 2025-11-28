@@ -120,17 +120,15 @@ public class InventoryServiceTests
         };
 
         _productRepositoryMock.Setup(x => x.GetActiveProductsAsync()).ReturnsAsync(products);
-        _productRepositoryMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(products[0]);
-        _productRepositoryMock.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(products[1]);
         _stockReservationRepositoryMock.Setup(x => x.GetAvailableStockBatchAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(availableStockMap);
-        _lowStockEventRepositoryMock.Setup(x => x.HasRecentEventAsync(It.IsAny<int>(), 24)).ReturnsAsync(false);
+        _lowStockEventRepositoryMock.Setup(x => x.GetProductIdsWithRecentEventsAsync(It.IsAny<IEnumerable<int>>(), 24)).ReturnsAsync(new HashSet<int>());
 
         // Act
         await _inventoryService.CheckLowStockLevelsAsync();
 
         // Assert
-        _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(1, 5, 10), Times.Once);
-        _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(2, It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(1, "Product 1", "SKU1", 5, 10), Times.Once);
+        _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(2, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
@@ -149,13 +147,13 @@ public class InventoryServiceTests
 
         _productRepositoryMock.Setup(x => x.GetActiveProductsAsync()).ReturnsAsync(products);
         _stockReservationRepositoryMock.Setup(x => x.GetAvailableStockBatchAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(availableStockMap);
-        _lowStockEventRepositoryMock.Setup(x => x.HasRecentEventAsync(1, 24)).ReturnsAsync(true);
+        _lowStockEventRepositoryMock.Setup(x => x.GetProductIdsWithRecentEventsAsync(It.IsAny<IEnumerable<int>>(), 24)).ReturnsAsync(new HashSet<int> { 1 });
 
         // Act
         await _inventoryService.CheckLowStockLevelsAsync();
 
         // Assert
-        _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
@@ -190,9 +188,8 @@ public class InventoryServiceTests
         };
 
         _productRepositoryMock.Setup(x => x.GetActiveProductsAsync()).ReturnsAsync(activeProducts);
-        _productRepositoryMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(activeProducts[0]);
         _stockReservationRepositoryMock.Setup(x => x.GetAvailableStockBatchAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(availableStockMap);
-        _lowStockEventRepositoryMock.Setup(x => x.HasRecentEventAsync(1, 24)).ReturnsAsync(false);
+        _lowStockEventRepositoryMock.Setup(x => x.GetProductIdsWithRecentEventsAsync(It.IsAny<IEnumerable<int>>(), 24)).ReturnsAsync(new HashSet<int>());
 
         // Act
         await _inventoryService.CheckLowStockLevelsAsync();
@@ -202,6 +199,6 @@ public class InventoryServiceTests
         _stockReservationRepositoryMock.Verify(x => x.GetAvailableStockBatchAsync(
             It.Is<IEnumerable<int>>(ids => ids.ToList().Count == 1 && ids.Contains(1))), Times.Once);
         // Should only create event for active product 1
-        _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(1, 5, 10), Times.Once);
+        _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(1, "Product 1", "SKU1", 5, 10), Times.Once);
     }
 }
