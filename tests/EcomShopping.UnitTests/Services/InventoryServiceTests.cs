@@ -200,7 +200,7 @@ public class InventoryServiceTests
         // Assert
         // Should only call batch method with active product IDs
         _stockReservationRepositoryMock.Verify(x => x.GetAvailableStockBatchAsync(
-            It.Is<IEnumerable<int>>(ids => ids.Count() == 1 && ids.Contains(1))), Times.Once);
+            It.Is<IEnumerable<int>>(ids => ids.ToList().Count == 1 && ids.Contains(1))), Times.Once);
         // Should only create event for active product 1
         _lowStockEventRepositoryMock.Verify(x => x.CreateEventAsync(1, 5, 10), Times.Once);
     }

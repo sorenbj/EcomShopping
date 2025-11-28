@@ -154,13 +154,13 @@ public class StockReservationRepository : IStockReservationRepository
             .Where(sr => productIdList.Contains(sr.ProductId) && !sr.IsReleased && sr.ExpiresAt > now)
             .GroupBy(sr => sr.ProductId)
             .Select(g => new { ProductId = g.Key, ReservedQuantity = g.Sum(sr => sr.Quantity) })
-            .ToListAsync();
+            .ToDictionaryAsync(x => x.ProductId, x => x.ReservedQuantity);
 
-        // Build result dictionary
+        // Build result dictionary with O(1) lookup
         var result = new Dictionary<int, int>();
         foreach (var product in products)
         {
-            var reserved = reservedQuantities.FirstOrDefault(r => r.ProductId == product.Id)?.ReservedQuantity ?? 0;
+            var reserved = reservedQuantities.TryGetValue(product.Id, out var reservedQty) ? reservedQty : 0;
             result[product.Id] = product.StockQuantity - reserved;
         }
 
