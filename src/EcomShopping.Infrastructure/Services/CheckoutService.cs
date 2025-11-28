@@ -305,9 +305,14 @@ public class CheckoutService
                 product.StockQuantity -= item.Quantity;
                 await _productRepository.UpdateAsync(product);
 
-                // Check for low stock and create event if needed
+                // Check for low stock and create event if needed (using optimized overload)
                 var availableStock = await _stockReservationRepository.GetAvailableStockAsync(product.Id);
-                await _inventoryService.CheckAndCreateLowStockEventAsync(product.Id, availableStock, product.LowStockThreshold);
+                await _inventoryService.CheckAndCreateLowStockEventAsync(
+                    product.Id, 
+                    product.Name, 
+                    product.SKU, 
+                    availableStock, 
+                    product.LowStockThreshold);
             }
         }
     }
