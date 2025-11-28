@@ -210,6 +210,9 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.AcknowledgedBy).HasMaxLength(200);
             entity.HasIndex(e => e.IsAcknowledged);
             entity.HasIndex(e => e.CreatedAt);
+            // Composite index for optimized query performance on unacknowledged events
+            entity.HasIndex(e => new { e.IsAcknowledged, e.CreatedAt });
+            entity.HasIndex(e => e.ProductId);
             entity.HasOne(e => e.Product)
                 .WithMany(p => p.LowStockEvents)
                 .HasForeignKey(e => e.ProductId)
