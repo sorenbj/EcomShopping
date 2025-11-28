@@ -94,13 +94,18 @@ public class InventoryService
     public async Task CheckLowStockLevelsAsync()
     {
         var products = await _productRepository.GetAllAsync();
+        var activeProducts = products.Where(p => p.IsActive).ToList();
 
-        foreach (var product in products)
+        if (!activeProducts.Any())
+            return;
+
+        // Get available stock for all active products in a single batch query
+        var productIds = activeProducts.Select(p => p.Id).ToList();
+        var availableStockMap = await _stockReservationRepository.GetAvailableStockBatchAsync(productIds);
+
+        foreach (var product in activeProducts)
         {
-            if (!product.IsActive)
-                continue;
-
-            var availableStock = await _stockReservationRepository.GetAvailableStockAsync(product.Id);
+            var availableStock = availableStockMap.TryGetValue(product.Id, out var stock) ? stock : product.StockQuantity;
             await CheckAndCreateLowStockEventAsync(product.Id, availableStock, product.LowStockThreshold);
         }
     }
