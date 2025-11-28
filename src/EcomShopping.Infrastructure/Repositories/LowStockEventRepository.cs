@@ -25,6 +25,7 @@ public class LowStockEventRepository : ILowStockEventRepository
         return await _context.LowStockEvents
             .AsNoTracking()
             .OrderByDescending(e => e.CreatedAt)
+            .Take(100)
             .ToListAsync();
     }
 
@@ -34,6 +35,7 @@ public class LowStockEventRepository : ILowStockEventRepository
             .AsNoTracking()
             .Where(e => !e.IsAcknowledged)
             .OrderByDescending(e => e.CreatedAt)
+            .Take(100)
             .ToListAsync();
     }
 

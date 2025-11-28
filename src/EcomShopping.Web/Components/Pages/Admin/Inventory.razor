@@ -218,7 +218,7 @@
     private async Task LoadLowStockAlertsAsync()
     {
         isLoadingAlerts = true;
-        var alerts = await InventoryApi.GetLowStockAlertsAsync(unacknowledgedOnly: false);
+        var alerts = await InventoryApi.GetLowStockAlertsAsync(unacknowledgedOnly: true);
         lowStockAlerts = alerts ?? new List<LowStockEventDto>();
         isLoadingAlerts = false;
     }
