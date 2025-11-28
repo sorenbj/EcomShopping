@@ -119,7 +119,7 @@ public class InventoryServiceTests
             { 2, 50 }
         };
 
-        _productRepositoryMock.Setup(x => x.GetAllAsync()).ReturnsAsync(products);
+        _productRepositoryMock.Setup(x => x.GetActiveProductsAsync()).ReturnsAsync(products);
         _productRepositoryMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(products[0]);
         _productRepositoryMock.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(products[1]);
         _stockReservationRepositoryMock.Setup(x => x.GetAvailableStockBatchAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(availableStockMap);
@@ -147,7 +147,7 @@ public class InventoryServiceTests
             { 1, 5 }
         };
 
-        _productRepositoryMock.Setup(x => x.GetAllAsync()).ReturnsAsync(products);
+        _productRepositoryMock.Setup(x => x.GetActiveProductsAsync()).ReturnsAsync(products);
         _stockReservationRepositoryMock.Setup(x => x.GetAvailableStockBatchAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(availableStockMap);
         _lowStockEventRepositoryMock.Setup(x => x.HasRecentEventAsync(1, 24)).ReturnsAsync(true);
 
@@ -178,11 +178,10 @@ public class InventoryServiceTests
     [Fact]
     public async Task CheckLowStockLevelsAsync_WithInactiveProducts_ShouldSkipThem()
     {
-        // Arrange
-        var products = new List<Product>
+        // Arrange - only return active products from GetActiveProductsAsync
+        var activeProducts = new List<Product>
         {
-            new Product { Id = 1, Name = "Product 1", SKU = "SKU1", StockQuantity = 5, LowStockThreshold = 10, IsActive = true },
-            new Product { Id = 2, Name = "Product 2", SKU = "SKU2", StockQuantity = 3, LowStockThreshold = 10, IsActive = false }
+            new Product { Id = 1, Name = "Product 1", SKU = "SKU1", StockQuantity = 5, LowStockThreshold = 10, IsActive = true }
         };
 
         var availableStockMap = new Dictionary<int, int>
@@ -190,8 +189,8 @@ public class InventoryServiceTests
             { 1, 5 }
         };
 
-        _productRepositoryMock.Setup(x => x.GetAllAsync()).ReturnsAsync(products);
-        _productRepositoryMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(products[0]);
+        _productRepositoryMock.Setup(x => x.GetActiveProductsAsync()).ReturnsAsync(activeProducts);
+        _productRepositoryMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(activeProducts[0]);
         _stockReservationRepositoryMock.Setup(x => x.GetAvailableStockBatchAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(availableStockMap);
         _lowStockEventRepositoryMock.Setup(x => x.HasRecentEventAsync(1, 24)).ReturnsAsync(false);
 
