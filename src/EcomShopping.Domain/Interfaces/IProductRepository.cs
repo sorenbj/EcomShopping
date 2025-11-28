@@ -8,4 +8,5 @@ public interface IProductRepository : IRepository<Product>
     Task<Product?> GetBySkuAsync(string sku);
     Task<Product?> GetBySlugAsync(string slug);
     Task<IEnumerable<Product>> GetLowStockProductsAsync(int threshold);
+    Task<IEnumerable<Product>> GetActiveProductsAsync();
 }

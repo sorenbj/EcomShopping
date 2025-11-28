@@ -133,6 +133,40 @@ public class StockReservationRepository : IStockReservationRepository
         return product.StockQuantity - reservedQuantity;
     }
 
+    public async Task<Dictionary<int, int>> GetAvailableStockBatchAsync(IEnumerable<int> productIds)
+    {
+        var productIdList = productIds.ToList();
+        if (!productIdList.Any())
+        {
+            return new Dictionary<int, int>();
+        }
+
+        var now = DateTime.UtcNow;
+
+        // Get products with their stock quantities in one query
+        var products = await _context.Products
+            .Where(p => productIdList.Contains(p.Id))
+            .Select(p => new { p.Id, p.StockQuantity })
+            .ToListAsync();
+
+        // Get reserved quantities for all products in one query
+        var reservedQuantities = await _context.StockReservations
+            .Where(sr => productIdList.Contains(sr.ProductId) && !sr.IsReleased && sr.ExpiresAt > now)
+            .GroupBy(sr => sr.ProductId)
+            .Select(g => new { ProductId = g.Key, ReservedQuantity = g.Sum(sr => sr.Quantity) })
+            .ToDictionaryAsync(x => x.ProductId, x => x.ReservedQuantity);
+
+        // Build result dictionary with O(1) lookup
+        var result = new Dictionary<int, int>();
+        foreach (var product in products)
+        {
+            var reserved = reservedQuantities.TryGetValue(product.Id, out var reservedQty) ? reservedQty : 0;
+            result[product.Id] = product.StockQuantity - reserved;
+        }
+
+        return result;
+    }
+
     public async Task ConfirmReservationAsync(int reservationId, string orderNumber)
     {
         var reservation = await _context.StockReservations.FindAsync(reservationId);

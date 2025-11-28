@@ -101,4 +101,12 @@ public class ProductRepository : IProductRepository
             .OrderBy(p => p.StockQuantity)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<Product>> GetActiveProductsAsync()
+    {
+        return await _context.Products
+            .AsNoTracking()
+            .Where(p => p.IsActive)
+            .ToListAsync();
+    }
 }

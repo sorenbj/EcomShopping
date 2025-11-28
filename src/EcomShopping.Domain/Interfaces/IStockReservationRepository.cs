@@ -40,6 +40,13 @@ public interface IStockReservationRepository : IRepository<StockReservation>
     Task<int> GetAvailableStockAsync(int productId);
 
     /// <summary>
+    /// Get available stock for multiple products in a single query
+    /// </summary>
+    /// <param name="productIds">Product IDs to check</param>
+    /// <returns>Dictionary of ProductId to AvailableStock</returns>
+    Task<Dictionary<int, int>> GetAvailableStockBatchAsync(IEnumerable<int> productIds);
+
+    /// <summary>
     /// Confirm reservation when order is placed
     /// </summary>
     Task ConfirmReservationAsync(int reservationId, string orderNumber);

@@ -195,6 +195,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.OrderNumber).HasMaxLength(100);
             entity.HasIndex(e => e.SessionId);
             entity.HasIndex(e => e.ExpiresAt);
+            // Composite index for optimized available stock queries
+            entity.HasIndex(e => new { e.ProductId, e.IsReleased, e.ExpiresAt });
             entity.HasOne(e => e.Product)
                 .WithMany(p => p.StockReservations)
                 .HasForeignKey(e => e.ProductId)
