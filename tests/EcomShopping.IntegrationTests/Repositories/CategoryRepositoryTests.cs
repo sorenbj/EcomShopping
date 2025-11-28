@@ -147,7 +147,8 @@ public class CategoryRepositoryTests : IDisposable
             Id = category.Id,
             Name = "Updated Electronics",
             Description = "Updated description",
-            ParentCategoryId = null
+            ParentCategoryId = null,
+            CreatedAt = category.CreatedAt
         };
         await _repository.UpdateAsync(updatedCategory);
 
@@ -180,20 +181,23 @@ public class CategoryRepositoryTests : IDisposable
         };
         await _repository.AddAsync(childCategory);
 
-        // Act
+        // Act - Update to add parent category relationship
         var updatedCategory = new Category
         {
             Id = childCategory.Id,
-            Name = "Laptops",
-            Description = "Laptop computers",
-            ParentCategoryId = parentCategory.Id
+            Name = "Gaming Laptops",
+            Description = "High-performance gaming laptops",
+            ParentCategoryId = parentCategory.Id,
+            CreatedAt = childCategory.CreatedAt
         };
         await _repository.UpdateAsync(updatedCategory);
 
         // Assert
         var result = await _repository.GetByIdAsync(childCategory.Id);
         result.Should().NotBeNull();
-        result!.ParentCategoryId.Should().Be(parentCategory.Id);
+        result!.Name.Should().Be("Gaming Laptops");
+        result.Description.Should().Be("High-performance gaming laptops");
+        result.ParentCategoryId.Should().Be(parentCategory.Id);
         result.ParentCategory.Should().NotBeNull();
         result.ParentCategory!.Name.Should().Be("Electronics");
     }
