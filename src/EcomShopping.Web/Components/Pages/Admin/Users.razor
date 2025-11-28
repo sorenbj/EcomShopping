@@ -248,17 +248,18 @@
                                 Active
                             </label>
                         </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="HideEditUserModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Update User
+                            </button>
+                        </div>
                     </EditForm>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HideEditUserModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting" @onclick="UpdateUser">
-                        @if (isSubmitting)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2"></span>
-                        }
-                        Update User
-                    </button>
                 </div>
             </div>
         </div>
