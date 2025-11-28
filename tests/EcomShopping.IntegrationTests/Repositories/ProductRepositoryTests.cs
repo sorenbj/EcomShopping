@@ -130,4 +130,35 @@ public class ProductRepositoryTests : IDisposable
         items.Should().HaveCount(1);
         items.First().Name.Should().Be("Laptop Computer");
     }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldDetectMetadataChanges()
+    {
+        // Arrange
+        var product = new Product
+        {
+            Name = "Test Product",
+            Slug = "test-product-metadata",
+            SKU = "TEST-META-001",
+            Price = 99.99m,
+            StockQuantity = 10,
+            IsActive = true,
+            Description = "Test description",
+            Metadata = new Dictionary<string, string> { { "color", "blue" }, { "size", "large" } }
+        };
+        var createdProduct = await _repository.AddAsync(product);
+
+        // Act - Modify metadata
+        createdProduct.Metadata["color"] = "red";
+        createdProduct.Metadata["material"] = "cotton";
+        await _repository.UpdateAsync(createdProduct);
+
+        // Assert - Verify changes were saved
+        var updatedProduct = await _repository.GetByIdAsync(createdProduct.Id);
+        updatedProduct.Should().NotBeNull();
+        updatedProduct!.Metadata.Should().HaveCount(3);
+        updatedProduct.Metadata["color"].Should().Be("red");
+        updatedProduct.Metadata["size"].Should().Be("large");
+        updatedProduct.Metadata["material"].Should().Be("cotton");
+    }
 }
