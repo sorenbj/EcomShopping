@@ -57,6 +57,12 @@ builder.Services.AddHttpClient<CategoriesApiService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<ArticleApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 // Register session service as scoped (per user connection)
 builder.Services.AddScoped<SessionService>();
 

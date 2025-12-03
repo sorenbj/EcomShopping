@@ -1,0 +1,247 @@
+@page "/articles/{Slug}"
+@using EcomShopping.Application.DTOs
+@using EcomShopping.Web.Services
+@inject ArticleApiService ArticleApi
+@inject NavigationManager NavigationManager
+@inject ILogger<ArticleDetail> Logger
+@rendermode InteractiveServer
+
+<PageTitle>@(article?.Title ?? "Article") - EcomShopping</PageTitle>
+
+<div class="container py-4">
+    @if (loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading article...</p>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error</h4>
+            <p>@errorMessage</p>
+            <a href="/articles" class="btn btn-primary">Back to Articles</a>
+        </div>
+    }
+    else if (article == null)
+    {
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading">Article Not Found</h4>
+            <p>The article you're looking for doesn't exist or has been removed.</p>
+            <a href="/articles" class="btn btn-primary">Back to Articles</a>
+        </div>
+    }
+    else
+    {
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/articles">Articles</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@article.Title</li>
+            </ol>
+        </nav>
+
+        <article class="article-content">
+            <!-- Article Header -->
+            <header class="mb-4">
+                <h1 class="display-4 mb-3">@article.Title</h1>
+                
+                <div class="article-meta text-muted mb-3">
+                    @if (!string.IsNullOrWhiteSpace(article.Author))
+                    {
+                        <span class="me-3">
+                            <i class="bi bi-person-circle"></i> By @article.Author
+                        </span>
+                    }
+                    @if (article.PublishedAt.HasValue)
+                    {
+                        <span class="me-3">
+                            <i class="bi bi-calendar3"></i> @article.PublishedAt.Value.ToLocalTime().ToString("MMMM dd, yyyy")
+                        </span>
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(article.Summary))
+                {
+                    <p class="lead text-muted">@article.Summary</p>
+                }
+            </header>
+
+            <!-- Article Image -->
+            @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
+            {
+                <div class="mb-4">
+                    <img src="@article.ImageUrl" class="img-fluid rounded article-main-image" alt="@article.Title">
+                </div>
+            }
+
+            <!-- Article Content -->
+            <div class="article-body">
+                @((MarkupString)FormatContent(article.Content))
+            </div>
+
+            <!-- Article Footer -->
+            <footer class="mt-5 pt-4 border-top">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="/articles" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Back to Articles
+                    </a>
+                    
+                    @if (article.UpdatedAt.HasValue)
+                    {
+                        <small class="text-muted">
+                            Last updated: @article.UpdatedAt.Value.ToLocalTime().ToString("MMMM dd, yyyy")
+                        </small>
+                    }
+                </div>
+            </footer>
+        </article>
+    }
+</div>
+
+<style>
+    .article-content {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .article-main-image {
+        width: 100%;
+        max-height: 500px;
+        object-fit: cover;
+    }
+
+    .article-meta {
+        font-size: 0.95rem;
+    }
+
+    .article-meta i {
+        margin-right: 0.25rem;
+    }
+
+    .article-body {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #333;
+    }
+
+    .article-body p {
+        margin-bottom: 1.5rem;
+    }
+
+    .article-body h2 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+
+    .article-body h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
+
+    .article-body ul,
+    .article-body ol {
+        margin-bottom: 1.5rem;
+        padding-left: 2rem;
+    }
+
+    .article-body li {
+        margin-bottom: 0.5rem;
+    }
+
+    .article-body blockquote {
+        border-left: 4px solid var(--bs-primary);
+        padding-left: 1.5rem;
+        margin: 1.5rem 0;
+        font-style: italic;
+        color: #666;
+    }
+
+    .article-body code {
+        background-color: #f4f4f4;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .article-body pre {
+        background-color: #f4f4f4;
+        padding: 1rem;
+        border-radius: 5px;
+        overflow-x: auto;
+    }
+
+    .article-body pre code {
+        background-color: transparent;
+        padding: 0;
+    }
+
+    .article-body img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+        margin: 1.5rem 0;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Slug { get; set; } = string.Empty;
+
+    private ArticleDto? article;
+    private bool loading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadArticle();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadArticle();
+    }
+
+    private async Task LoadArticle()
+    {
+        loading = true;
+        errorMessage = null;
+        article = null;
+
+        try
+        {
+            article = await ArticleApi.GetArticleBySlugAsync(Slug);
+            
+            if (article == null)
+            {
+                errorMessage = "Article not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading article: {ex.Message}. Please ensure the API is running.";
+            Logger.LogError(ex, "Error loading article {Slug}", Slug);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string FormatContent(string content)
+    {
+        // Basic formatting: convert line breaks to paragraphs
+        // In a production environment, you might want to use a Markdown parser or rich text editor
+        var paragraphs = content.Split(new[] { "\n\n", "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+        var formatted = string.Join("", paragraphs.Select(p => $"<p>{System.Net.WebUtility.HtmlEncode(p.Trim()).Replace("\n", "<br>")}</p>"));
+        return formatted;
+    }
+}
