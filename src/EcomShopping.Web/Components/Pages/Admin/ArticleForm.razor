@@ -4,6 +4,7 @@
 @inject ArticleApiService ArticleApi
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ILogger<ArticleForm> Logger
 
 <PageTitle>@(isEditMode ? "Edit Article" : "Create Article") - EcomShopping</PageTitle>
 
@@ -273,7 +274,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error saving article: {ex.Message}";
+            Logger.LogError(ex, "Error saving article");
+            errorMessage = "An unexpected error occurred while saving the article. Please try again.";
         }
         finally
         {

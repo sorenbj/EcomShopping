@@ -203,7 +203,7 @@
             {
                 "published" => articlesResponse.Items.Where(a => a.IsPublished).ToList(),
                 "draft" => articlesResponse.Items.Where(a => !a.IsPublished).ToList(),
-                _ => articlesResponse.Items
+                _ => articlesResponse.Items.ToList()
             };
         }
     }
