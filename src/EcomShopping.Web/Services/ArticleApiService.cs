@@ -65,6 +65,12 @@ public class ArticleApiService
     /// </summary>
     public async Task<ArticleDto?> GetArticleBySlugAsync(string slug)
     {
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            _logger.LogWarning("GetArticleBySlugAsync called with null or empty slug");
+            return null;
+        }
+
         try
         {
             return await _httpClient.GetFromJsonAsync<ArticleDto>($"api/articles/by-slug/{slug}");
