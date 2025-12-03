@@ -1,4 +1,5 @@
 using EcomShopping.Domain.Entities;
+using System.Threading;
 
 namespace EcomShopping.Domain.Interfaces;
 
@@ -7,7 +8,7 @@ public interface ILowStockEventRepository : IRepository<LowStockEvent>
     /// <summary>
     /// Get all unacknowledged low-stock events
     /// </summary>
-    Task<IEnumerable<LowStockEvent>> GetUnacknowledgedAsync();
+    Task<IEnumerable<LowStockEvent>> GetUnacknowledgedAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get low-stock events for a specific product

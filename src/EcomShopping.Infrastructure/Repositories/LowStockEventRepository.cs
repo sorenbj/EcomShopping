@@ -24,19 +24,21 @@ public class LowStockEventRepository : ILowStockEventRepository
     {
         return await _context.LowStockEvents
             .AsNoTracking()
+            .IgnoreAutoIncludes()
             .OrderByDescending(e => e.CreatedAt)
             .Take(100)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<LowStockEvent>> GetUnacknowledgedAsync()
+    public async Task<IEnumerable<LowStockEvent>> GetUnacknowledgedAsync(CancellationToken cancellationToken = default)
     {
         return await _context.LowStockEvents
             .AsNoTracking()
+            .IgnoreAutoIncludes()
             .Where(e => !e.IsAcknowledged)
             .OrderByDescending(e => e.CreatedAt)
             .Take(100)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<LowStockEvent>> GetByProductIdAsync(int productId)

@@ -21,8 +21,14 @@ public class InventoryApiService
     {
         try
         {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             return await _httpClient.GetFromJsonAsync<List<LowStockEventDto>>(
-                $"api/inventory/low-stock-alerts?unacknowledgedOnly={unacknowledgedOnly}");
+                $"api/inventory/low-stock-alerts?unacknowledgedOnly={unacknowledgedOnly}", cts.Token);
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Timeout fetching low-stock alerts after 10 seconds");
+            return null;
         }
         catch (Exception ex)
         {

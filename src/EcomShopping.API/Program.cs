@@ -9,9 +9,20 @@ using EcomShopping.Integration.Core;
 using EcomShopping.Integration.Core.Providers;
 using EcomShopping.FileImport.Core;
 using EcomShopping.FileImport.Core.Parsers;
+using EcomShopping.API.Middleware;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Enable scope validation in development to catch DI issues
+if (builder.Environment.IsDevelopment())
+{
+    builder.Host.UseDefaultServiceProvider(options =>
+    {
+        options.ValidateScopes = true;
+        options.ValidateOnBuild = true;
+    });
+}
 
 // Add services to the container
 builder.Services.AddControllers()
@@ -44,7 +55,14 @@ else
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
         ?? "Server=(localdb)\\mssqllocaldb;Database=EcomShoppingDb;Trusted_Connection=true;MultipleActiveResultSets=true";
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(connectionString));
+        options.UseSqlServer(connectionString, sqlOptions =>
+        {
+            sqlOptions.CommandTimeout(30); // Increased from 10 to 30 seconds
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 3,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorNumbersToAdd: null);
+        }));
 }
 
 // Register repositories
@@ -75,12 +93,12 @@ builder.Services.AddScoped<FileImportService>();
 builder.Services.AddScoped<FileImportOrchestrationService>();
 
 // Register integration services
-builder.Services.AddSingleton<IntegrationProviderRegistry>();
-builder.Services.AddSingleton<IntegrationEngine>();
-builder.Services.AddSingleton<IntegrationScheduler>();
+builder.Services.AddScoped<IntegrationProviderRegistry>(); // Changed from Singleton to Scoped
+builder.Services.AddScoped<IntegrationEngine>(); // Changed from Singleton to Scoped
+builder.Services.AddScoped<IntegrationScheduler>(); // Changed from Singleton to Scoped
 
 // Register mock integration providers
-builder.Services.AddSingleton(sp =>
+builder.Services.AddScoped(sp =>
 {
     var registry = sp.GetRequiredService<IntegrationProviderRegistry>();
     
@@ -116,29 +134,43 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Seed the database with sample data
+var appLogger = app.Services.GetRequiredService<ILogger<Program>>();
+
+// Seed the database with sample data BEFORE starting the middleware pipeline
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
     try
     {
+        logger.LogInformation("Initializing database...");
         var context = services.GetRequiredService<ApplicationDbContext>();
         
         // Ensure database is created (for SQL Server)
         if (!useInMemory)
         {
             context.Database.EnsureCreated();
+            logger.LogInformation("Database created/verified");
         }
         
-        // Seed data for both in-memory and SQL Server
+        // Seed data for both in-memory and SQL Server  
+        logger.LogInformation("Seeding database...");
         DbSeeder.SeedDatabase(context);
+        logger.LogInformation("Database initialization completed");
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
+    
+    logger.LogInformation("Disposing initialization scope to release database connections");
 }
+
+// Small delay to ensure connections are fully released
+appLogger.LogInformation("Waiting for connection pool cleanup...");
+await Task.Delay(100);
+appLogger.LogInformation("Starting HTTP request pipeline");
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -147,7 +179,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "EcomShopping API v1"));
 }
 
-app.UseHttpsRedirection();
+// Add request logging middleware
+app.UseMiddleware<RequestLoggingMiddleware>();
+
+// Don't use HTTPS redirection in development
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();

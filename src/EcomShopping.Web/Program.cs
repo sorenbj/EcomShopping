@@ -36,7 +36,7 @@ builder.Services.AddHttpClient<AdminApiService>(client =>
 builder.Services.AddHttpClient<InventoryApiService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(120);
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 builder.Services.AddHttpClient<OrdersApiService>(client =>

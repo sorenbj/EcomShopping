@@ -20,7 +20,7 @@ public class InventoryController : ControllerBase
     private readonly IStockReservationRepository _stockReservationRepository;
     private readonly ILowStockEventRepository _lowStockEventRepository;
     private readonly InventoryService _inventoryService;
-    private readonly IntegrationEngine _integrationEngine;
+    private readonly IServiceProvider _serviceProvider; // Use service provider for lazy resolution
     private readonly ILogger<InventoryController> _logger;
 
     public InventoryController(
@@ -29,16 +29,33 @@ public class InventoryController : ControllerBase
         IStockReservationRepository stockReservationRepository,
         ILowStockEventRepository lowStockEventRepository,
         InventoryService inventoryService,
-        IntegrationEngine integrationEngine,
+        IServiceProvider serviceProvider, // Inject service provider instead of IntegrationEngine directly
         ILogger<InventoryController> logger)
     {
+        logger.LogInformation("InventoryController constructor - START");
+        
+        logger.LogInformation("Injecting ProductRepository");
         _productRepository = productRepository;
+        
+        logger.LogInformation("Injecting StockMovementRepository");
         _stockMovementRepository = stockMovementRepository;
+        
+        logger.LogInformation("Injecting StockReservationRepository");
         _stockReservationRepository = stockReservationRepository;
+        
+        logger.LogInformation("Injecting LowStockEventRepository");
         _lowStockEventRepository = lowStockEventRepository;
+        
+        logger.LogInformation("Injecting InventoryService");
         _inventoryService = inventoryService;
-        _integrationEngine = integrationEngine;
+        
+        logger.LogInformation("Injecting ServiceProvider");
+        _serviceProvider = serviceProvider;
+        
+        logger.LogInformation("Injecting Logger");
         _logger = logger;
+        
+        logger.LogInformation("InventoryController constructor - END");
     }
 
     /// <summary>
@@ -51,14 +68,31 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<LowStockEventDto>>> GetLowStockAlerts([FromQuery] bool unacknowledgedOnly = true)
     {
+        _logger.LogInformation("GetLowStockAlerts endpoint called - starting");
+        
         try
         {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            
+            _logger.LogInformation("About to query repository for low-stock alerts");
+            
             var events = unacknowledgedOnly 
-                ? await _lowStockEventRepository.GetUnacknowledgedAsync()
+                ? await _lowStockEventRepository.GetUnacknowledgedAsync(cts.Token)
                 : await _lowStockEventRepository.GetAllAsync();
 
+            _logger.LogInformation("Repository query completed, mapping to DTOs");
+            
             var dtos = events.Select(e => MapToLowStockEventDto(e)).ToList();
+            
+            _logger.LogInformation("Retrieved {Count} low-stock alerts (unacknowledgedOnly: {UnacknowledgedOnly})", 
+                dtos.Count, unacknowledgedOnly);
+            
             return Ok(dtos);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Low-stock alerts query timed out after 5 seconds");
+            return StatusCode(504, "Request timeout - database query took too long");
         }
         catch (Exception ex)
         {
@@ -208,8 +242,11 @@ public class InventoryController : ControllerBase
                 return NotFound($"Product with ID {productId} not found");
             }
 
+            // Lazily resolve IntegrationEngine to avoid DI deadlock
+            var integrationEngine = _serviceProvider.GetRequiredService<IntegrationEngine>();
+            
             // Use integration engine to update ERP
-            var result = await _integrationEngine.ExecuteAsync(
+            var result = await integrationEngine.ExecuteAsync(
                 "erp_provider", 
                 "updateinventory",
                 new { sku = product.SKU, quantity = product.StockQuantity });
@@ -297,6 +334,51 @@ public class InventoryController : ControllerBase
         {
             _logger.LogError(ex, "Error releasing expired reservations");
             return StatusCode(500, "An error occurred while releasing expired reservations");
+        }
+    }
+
+    /// <summary>
+    /// Health check endpoint for inventory service
+    /// </summary>
+    [HttpGet("health")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult HealthCheck()
+    {
+        _logger.LogInformation("Inventory health check called");
+        return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Test database connectivity
+    /// </summary>
+    [HttpGet("test-db")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> TestDatabase()
+    {
+        try
+        {
+            _logger.LogInformation("Testing database connection");
+            
+            // Simple count query with timeout
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var count = await _lowStockEventRepository.GetUnacknowledgedAsync(cts.Token);
+            
+            return Ok(new 
+            { 
+                status = "database_connected", 
+                eventCount = count.Count(),
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Database test timed out");
+            return StatusCode(504, new { status = "timeout", message = "Database query timed out after 2 seconds" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Database test failed");
+            return StatusCode(500, new { status = "error", message = ex.Message });
         }
     }
 
