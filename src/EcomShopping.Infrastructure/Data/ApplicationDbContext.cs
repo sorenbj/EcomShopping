@@ -25,6 +25,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<Article> Articles => Set<Article>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -262,6 +263,21 @@ public class ApplicationDbContext : DbContext
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Article configuration
+        modelBuilder.Entity<Article>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(550);
+            entity.HasIndex(e => e.Slug).IsUnique();
+            entity.Property(e => e.Content).IsRequired();
+            entity.Property(e => e.Summary).HasMaxLength(2000);
+            entity.Property(e => e.Author).HasMaxLength(200);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.HasIndex(e => e.IsPublished);
+            entity.HasIndex(e => e.PublishedAt);
         });
     }
 }
