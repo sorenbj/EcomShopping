@@ -1,0 +1,293 @@
+@page "/admin/articles/create"
+@page "/admin/articles/edit/{Id:int}"
+@rendermode InteractiveServer
+@inject ArticleApiService ArticleApi
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(isEditMode ? "Edit Article" : "Create Article") - EcomShopping</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6">@(isEditMode ? "Edit Article" : "Create New Article")</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="/admin/articles" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Articles
+            </a>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Article Information</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                @errorMessage
+                                <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+                            </div>
+                        }
+
+                        <EditForm Model="@article" OnValidSubmit="HandleSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="text-danger" />
+
+                            <div class="mb-3">
+                                <label class="form-label">Title *</label>
+                                <InputText class="form-control" @bind-Value="article.Title" placeholder="Enter article title" />
+                                <small class="form-text text-muted">
+                                    The title will be used to generate a URL-friendly slug
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Summary</label>
+                                <InputTextArea class="form-control" @bind-Value="article.Summary" rows="3" 
+                                               placeholder="Enter a brief summary (optional)" />
+                                <small class="form-text text-muted">
+                                    This will be displayed in article listings
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Content *</label>
+                                <InputTextArea class="form-control" @bind-Value="article.Content" rows="12" 
+                                               placeholder="Enter the full article content" />
+                                <small class="form-text text-muted">
+                                    Supports plain text and line breaks
+                                </small>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Author</label>
+                                    <InputText class="form-control" @bind-Value="article.Author" placeholder="Author name (optional)" />
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Image URL</label>
+                                    <InputText class="form-control" @bind-Value="article.ImageUrl" placeholder="https://example.com/image.jpg (optional)" />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <InputCheckbox class="form-check-input" @bind-Value="article.IsPublished" />
+                                    <label class="form-check-label">
+                                        Publish article (make it visible to the public)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    }
+                                    <i class="bi bi-save"></i> @(isEditMode ? "Update Article" : "Create Article")
+                                </button>
+                                <a href="/admin/articles" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Preview</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
+                        {
+                            <img src="@article.ImageUrl" alt="Article preview" class="img-fluid mb-3" 
+                                 style="max-height: 200px; width: 100%; object-fit: cover;" 
+                                 onerror="this.style.display='none'" />
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(article.Title))
+                        {
+                            <h5>@article.Title</h5>
+                        }
+                        else
+                        {
+                            <h5 class="text-muted">Article Title</h5>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(article.Author))
+                        {
+                            <p class="text-muted mb-2"><small>By @article.Author</small></p>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(article.Summary))
+                        {
+                            <p class="mt-3"><small>@article.Summary</small></p>
+                        }
+
+                        <p class="mb-0">
+                            <small>
+                                <strong>Status:</strong>
+                                @if (article.IsPublished)
+                                {
+                                    <span class="badge bg-success">Published</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Draft</span>
+                                }
+                            </small>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Tips</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="small mb-0">
+                            <li>Write a clear, descriptive title</li>
+                            <li>Keep the summary concise (1-2 sentences)</li>
+                            <li>Use line breaks to organize content</li>
+                            <li>Add an image to make the article more engaging</li>
+                            <li>Save as draft to preview before publishing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private ArticleFormModel article = new();
+    private bool isEditMode = false;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            isEditMode = true;
+            await LoadArticleAsync(Id.Value);
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadArticleAsync(int id)
+    {
+        var articleDto = await ArticleApi.GetArticleByIdAsync(id, includeUnpublished: true);
+        if (articleDto != null)
+        {
+            article = new ArticleFormModel
+            {
+                Title = articleDto.Title,
+                Content = articleDto.Content,
+                Summary = articleDto.Summary,
+                Author = articleDto.Author,
+                ImageUrl = articleDto.ImageUrl,
+                IsPublished = articleDto.IsPublished
+            };
+        }
+        else
+        {
+            errorMessage = "Article not found.";
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSaving = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (isEditMode && Id.HasValue)
+            {
+                var updateDto = new UpdateArticleDto
+                {
+                    Title = article.Title,
+                    Content = article.Content,
+                    Summary = article.Summary,
+                    Author = article.Author,
+                    ImageUrl = article.ImageUrl,
+                    IsPublished = article.IsPublished
+                };
+
+                var result = await ArticleApi.UpdateArticleAsync(Id.Value, updateDto);
+                if (result != null)
+                {
+                    Navigation.NavigateTo("/admin/articles");
+                }
+                else
+                {
+                    errorMessage = "Failed to update article. Please try again.";
+                }
+            }
+            else
+            {
+                var createDto = new CreateArticleDto
+                {
+                    Title = article.Title,
+                    Content = article.Content,
+                    Summary = article.Summary,
+                    Author = article.Author,
+                    ImageUrl = article.ImageUrl,
+                    IsPublished = article.IsPublished
+                };
+
+                var result = await ArticleApi.CreateArticleAsync(createDto);
+                if (result != null)
+                {
+                    Navigation.NavigateTo("/admin/articles");
+                }
+                else
+                {
+                    errorMessage = "Failed to create article. Please try again.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving article: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private class ArticleFormModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string? Summary { get; set; }
+        public string? Author { get; set; }
+        public string? ImageUrl { get; set; }
+        public bool IsPublished { get; set; } = false;
+    }
+}

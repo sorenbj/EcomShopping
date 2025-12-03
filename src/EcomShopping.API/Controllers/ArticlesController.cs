@@ -23,26 +23,33 @@ public class ArticlesController : ControllerBase
     }
 
     /// <summary>
-    /// Get a paged list of published articles
+    /// Get a paged list of articles
     /// </summary>
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Number of items per page (default: 10, max: 100)</param>
+    /// <param name="includeUnpublished">Include unpublished articles (default: false)</param>
     /// <returns>Paged list of articles</returns>
     [HttpGet]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<object>> GetArticles(
         [FromQuery] int page = 1, 
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool includeUnpublished = false)
     {
         try
         {
             if (pageSize > 100) pageSize = 100;
             if (page < 1) page = 1;
 
-            var query = _context.Articles
-                .Where(a => a.IsPublished)
-                .OrderByDescending(a => a.PublishedAt ?? a.CreatedAt);
+            var query = _context.Articles.AsQueryable();
+            
+            if (!includeUnpublished)
+            {
+                query = query.Where(a => a.IsPublished);
+            }
+            
+            query = query.OrderByDescending(a => a.PublishedAt ?? a.CreatedAt);
 
             var totalCount = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -74,17 +81,24 @@ public class ArticlesController : ControllerBase
     /// Get a specific article by ID
     /// </summary>
     /// <param name="id">Article ID</param>
+    /// <param name="includeUnpublished">Include unpublished articles (default: false)</param>
     /// <returns>Article details</returns>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ArticleDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ArticleDto>> GetArticle(int id)
+    public async Task<ActionResult<ArticleDto>> GetArticle(int id, [FromQuery] bool includeUnpublished = false)
     {
         try
         {
-            var article = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == id && a.IsPublished);
+            var query = _context.Articles.Where(a => a.Id == id);
+            
+            if (!includeUnpublished)
+            {
+                query = query.Where(a => a.IsPublished);
+            }
+            
+            var article = await query.FirstOrDefaultAsync();
 
             if (article == null)
             {

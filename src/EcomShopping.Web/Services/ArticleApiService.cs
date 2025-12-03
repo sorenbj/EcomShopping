@@ -40,13 +40,40 @@ public class ArticleApiService
     }
 
     /// <summary>
-    /// Get a specific article by ID
+    /// Get a paged list of all articles including unpublished ones (for admin)
     /// </summary>
-    public async Task<ArticleDto?> GetArticleByIdAsync(int id)
+    public async Task<PagedArticleResponse?> GetAllArticlesAsync(int page = 1, int pageSize = 10)
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<ArticleDto>($"api/articles/{id}");
+            var url = $"api/articles?page={page}&pageSize={pageSize}&includeUnpublished=true";
+            return await _httpClient.GetFromJsonAsync<PagedArticleResponse>(url);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Network error retrieving all articles");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving all articles");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Get a specific article by ID
+    /// </summary>
+    public async Task<ArticleDto?> GetArticleByIdAsync(int id, bool includeUnpublished = false)
+    {
+        try
+        {
+            var url = $"api/articles/{id}";
+            if (includeUnpublished)
+            {
+                url += "?includeUnpublished=true";
+            }
+            return await _httpClient.GetFromJsonAsync<ArticleDto>(url);
         }
         catch (HttpRequestException ex)
         {
