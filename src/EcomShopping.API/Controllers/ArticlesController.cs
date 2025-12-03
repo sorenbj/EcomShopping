@@ -266,6 +266,99 @@ public class ArticlesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Seed sample articles (for testing and demo purposes)
+    /// </summary>
+    /// <returns>Number of articles created</returns>
+    [HttpPost("seed")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<object>> SeedArticles()
+    {
+        try
+        {
+            // Check if articles already exist
+            if (await _context.Articles.AnyAsync())
+            {
+                return Ok(new { message = "Articles already exist. Seed skipped.", count = 0 });
+            }
+
+            var sampleArticles = new List<Article>
+            {
+                new Article
+                {
+                    Title = "Welcome to Our E-commerce Platform",
+                    Slug = "welcome-to-our-ecommerce-platform",
+                    Content = "We are excited to announce the launch of our new e-commerce platform!\n\nOur platform offers a wide range of products with an intuitive shopping experience. Whether you're looking for electronics, clothing, or home goods, we have something for everyone.\n\nKey Features:\n- Easy-to-use product catalog with advanced search and filtering\n- Secure checkout process\n- Real-time inventory management\n- Fast and reliable shipping\n\nThank you for choosing us as your shopping destination. We look forward to serving you!",
+                    Summary = "Discover our new e-commerce platform with a wide range of products and an intuitive shopping experience.",
+                    Author = "Admin Team",
+                    ImageUrl = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800",
+                    IsPublished = true,
+                    CreatedAt = DateTime.UtcNow.AddDays(-30),
+                    PublishedAt = DateTime.UtcNow.AddDays(-30)
+                },
+                new Article
+                {
+                    Title = "How to Find the Best Deals",
+                    Slug = "how-to-find-the-best-deals",
+                    Content = "Shopping smart means finding the best deals without compromising on quality. Here are some tips to help you save money:\n\n1. Sign up for our newsletter to get exclusive offers and early access to sales.\n2. Check our deals section regularly for limited-time promotions.\n3. Use filters to compare prices and find the best value.\n4. Read product reviews to ensure you're getting quality items.\n5. Take advantage of bulk purchase discounts.\n\nRemember, the best deal is not always the cheapest price - it's about getting the best value for your money. Happy shopping!",
+                    Summary = "Learn how to shop smart and find the best deals on our platform with these helpful tips.",
+                    Author = "Shopping Expert",
+                    ImageUrl = "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800",
+                    IsPublished = true,
+                    CreatedAt = DateTime.UtcNow.AddDays(-20),
+                    PublishedAt = DateTime.UtcNow.AddDays(-20)
+                },
+                new Article
+                {
+                    Title = "Understanding Our Return Policy",
+                    Slug = "understanding-our-return-policy",
+                    Content = "We want you to be completely satisfied with your purchase. That's why we offer a flexible return policy.\n\nReturn Policy Highlights:\n- 30-day return window for most items\n- Free returns on eligible products\n- Easy return process through our website\n- Full refund or exchange available\n\nHow to Return an Item:\n1. Log into your account and go to Order History\n2. Select the item you want to return\n3. Choose a return reason and follow the instructions\n4. Print the return label and ship the item back\n5. Receive your refund within 5-7 business days after we receive the item\n\nFor more information, please contact our customer support team.",
+                    Summary = "Learn about our flexible return policy and how easy it is to return items if you're not satisfied.",
+                    Author = "Customer Service",
+                    ImageUrl = "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=800",
+                    IsPublished = true,
+                    CreatedAt = DateTime.UtcNow.AddDays(-15),
+                    PublishedAt = DateTime.UtcNow.AddDays(-15)
+                },
+                new Article
+                {
+                    Title = "New Product Categories Available",
+                    Slug = "new-product-categories-available",
+                    Content = "We're excited to announce the addition of new product categories to our store!\n\nNew Categories:\n- Home & Garden: Transform your living space with our curated selection of home decor and gardening supplies\n- Sports & Outdoors: Get active with our range of sporting goods and outdoor equipment\n- Books & Media: Explore our collection of books, music, and movies\n- Health & Beauty: Discover products to help you look and feel your best\n\nEach category features carefully selected products from trusted brands. We're continuously expanding our inventory to meet your needs.\n\nVisit our store today to explore these new categories and find your next favorite product!",
+                    Summary = "Explore our newly added product categories including Home & Garden, Sports & Outdoors, Books & Media, and Health & Beauty.",
+                    Author = "Product Team",
+                    ImageUrl = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800",
+                    IsPublished = true,
+                    CreatedAt = DateTime.UtcNow.AddDays(-10),
+                    PublishedAt = DateTime.UtcNow.AddDays(-10)
+                },
+                new Article
+                {
+                    Title = "Customer Spotlight: Success Stories",
+                    Slug = "customer-spotlight-success-stories",
+                    Content = "We love hearing from our customers! Here are some recent success stories from shoppers who found exactly what they needed.\n\nJohn's Home Office Transformation:\n\"I was able to find everything I needed to set up my home office in one place. The product quality exceeded my expectations, and the delivery was super fast!\"\n\nSarah's Gift Shopping Experience:\n\"Shopping for gifts has never been easier. The search filters helped me find the perfect presents for my family, and they all loved them!\"\n\nMike's Tech Upgrade:\n\"I was hesitant to buy electronics online, but the detailed product descriptions and customer reviews gave me confidence. My new laptop arrived quickly and works perfectly!\"\n\nThank you to all our customers for sharing your experiences. Your feedback helps us improve and serve you better!",
+                    Summary = "Read inspiring stories from our satisfied customers and learn how they found the perfect products for their needs.",
+                    Author = "Community Manager",
+                    ImageUrl = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800",
+                    IsPublished = true,
+                    CreatedAt = DateTime.UtcNow.AddDays(-5),
+                    PublishedAt = DateTime.UtcNow.AddDays(-5)
+                }
+            };
+
+            _context.Articles.AddRange(sampleArticles);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Sample articles seeded successfully", count = sampleArticles.Count });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error seeding articles");
+            return StatusCode(500, "An error occurred while seeding articles");
+        }
+    }
+
     private static ArticleDto MapToDto(Article article)
     {
         return new ArticleDto
