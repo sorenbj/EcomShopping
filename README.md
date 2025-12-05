@@ -164,13 +164,12 @@ EcomShopping/
 - ✅ **JSON** file import with System.Text.Json
 - ✅ **XML** file import with System.Xml.Linq
 - ✅ Generic file import engine with field mapping
-- ✅ Product and Category importers
+- ✅ Product, Category, and User importers
 - ✅ File upload API endpoint
 - ✅ Admin UI with upload wizard and data preview
 - ✅ Import job tracking and status monitoring
 - ✅ Validation and error handling
 - ✅ Extensible architecture for new file types and tables
-- ✅ **XML** file import (ready for implementation)
 - ✅ Import job tracking and history
 - ✅ Comprehensive error logging per row
 - ✅ Asynchronous processing support
