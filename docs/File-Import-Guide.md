@@ -14,6 +14,7 @@ The File Import Engine provides a comprehensive solution for importing data from
 ### Supported Tables
 - **Products**: Import product catalog data
 - **Categories**: Import product categories
+- **Users**: Import user accounts
 
 ### Key Capabilities
 - ✅ File upload and parsing
@@ -197,6 +198,21 @@ Create an Excel file with headers in the first row:
 | Description | Description | No | string | Category description |
 | ParentCategoryName | ParentCategoryName | No | string | Parent category name (must exist) |
 
+### Users Table
+
+| Source Field | Destination Field | Required | Type | Notes |
+|--------------|-------------------|----------|------|-------|
+| Email | Email | Yes | string | User email (must be unique, valid format) |
+| UserName | UserName | Yes | string | Username (must be unique) |
+| Password | Password | Yes | string | User password (min 6 characters, will be hashed) |
+| FirstName | FirstName | Yes | string | User first name |
+| LastName | LastName | Yes | string | User last name |
+| PhoneNumber | PhoneNumber | No | string | Phone number |
+| IsActive | IsActive | No | bool | Active status (default: true) |
+| EmailConfirmed | EmailConfirmed | No | bool | Email confirmed status (default: false) |
+
+**Security Note**: Passwords are automatically hashed using SHA256 before storage. In production, consider using a more robust password hashing algorithm like BCrypt or ASP.NET Core Identity.
+
 ## Validation Rules
 
 ### Products
@@ -209,6 +225,14 @@ Create an Excel file with headers in the first row:
 ### Categories
 - **Name**: Required, max 200 characters, must be unique
 - **Parent Category**: If provided, must exist in the database
+
+### Users
+- **Email**: Required, must be a valid email format, must be unique
+- **UserName**: Required, must be unique
+- **Password**: Required, minimum 6 characters (will be hashed before storage)
+- **FirstName**: Required
+- **LastName**: Required
+- **PhoneNumber**: Optional, no specific format required
 
 ## Error Handling
 
@@ -347,6 +371,8 @@ Sample import files are available in the `/docs/samples/` directory:
 - `products.json` - JSON format product import
 - `products.xml` - XML format product import
 - `categories.json` - JSON format category import
+- `users.json` - JSON format user import
+- `users.xml` - XML format user import
 
 ## API Integration
 

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Users>
+  <User>
+    <Email>dave.miller@example.com</Email>
+    <UserName>davemiller</UserName>
+    <Password>SecurePass123!</Password>
+    <FirstName>Dave</FirstName>
+    <LastName>Miller</LastName>
+    <PhoneNumber>+1-555-0300</PhoneNumber>
+    <IsActive>true</IsActive>
+    <EmailConfirmed>true</EmailConfirmed>
+  </User>
+  <User>
+    <Email>eve.martinez@example.com</Email>
+    <UserName>evemartinez</UserName>
+    <Password>SecurePass456!</Password>
+    <FirstName>Eve</FirstName>
+    <LastName>Martinez</LastName>
+    <PhoneNumber>+1-555-0301</PhoneNumber>
+    <IsActive>true</IsActive>
+    <EmailConfirmed>false</EmailConfirmed>
+  </User>
+  <User>
+    <Email>frank.garcia@example.com</Email>
+    <UserName>frankgarcia</UserName>
+    <Password>SecurePass789!</Password>
+    <FirstName>Frank</FirstName>
+    <LastName>Garcia</LastName>
+    <PhoneNumber>+1-555-0302</PhoneNumber>
+    <IsActive>true</IsActive>
+    <EmailConfirmed>true</EmailConfirmed>
+  </User>
+</Users>
