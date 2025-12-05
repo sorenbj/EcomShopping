@@ -1,0 +1,32 @@
+[
+  {
+    "Email": "alice.johnson@example.com",
+    "UserName": "alicejohnson",
+    "Password": "SecurePass123!",
+    "FirstName": "Alice",
+    "LastName": "Johnson",
+    "PhoneNumber": "+1-555-0200",
+    "IsActive": "true",
+    "EmailConfirmed": "true"
+  },
+  {
+    "Email": "bob.williams@example.com",
+    "UserName": "bobwilliams",
+    "Password": "SecurePass456!",
+    "FirstName": "Bob",
+    "LastName": "Williams",
+    "PhoneNumber": "+1-555-0201",
+    "IsActive": "true",
+    "EmailConfirmed": "false"
+  },
+  {
+    "Email": "carol.davis@example.com",
+    "UserName": "caroldavis",
+    "Password": "SecurePass789!",
+    "FirstName": "Carol",
+    "LastName": "Davis",
+    "PhoneNumber": "+1-555-0202",
+    "IsActive": "true",
+    "EmailConfirmed": "true"
+  }
+]

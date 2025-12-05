@@ -89,6 +89,7 @@ builder.Services.AddScoped<IFileParser, JsonFileParser>();
 builder.Services.AddScoped<IFileParser, XmlFileParser>();
 builder.Services.AddScoped<ITableImporter, ProductImporter>();
 builder.Services.AddScoped<ITableImporter, CategoryImporter>();
+builder.Services.AddScoped<ITableImporter, UserImporter>();
 builder.Services.AddScoped<FileImportService>();
 builder.Services.AddScoped<FileImportOrchestrationService>();
 

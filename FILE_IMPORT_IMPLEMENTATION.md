@@ -40,6 +40,15 @@ This implementation provides a complete, production-ready file import system for
   - Parent category linking
   - Name uniqueness validation
 
+- ✅ **UserImporter** - Imports users with:
+  - Email, UserName, Password, FirstName, LastName validation
+  - Email format validation
+  - Email and username uniqueness validation
+  - Password hashing (SHA256)
+  - Phone number support
+  - IsActive and EmailConfirmed flags
+  - Password strength validation (minimum 6 characters)
+
 #### Orchestration Service (`EcomShopping.Infrastructure/Services/`)
 - ✅ **FileImportOrchestrationService** - Orchestrates the complete import workflow:
   - Creates import jobs
@@ -101,8 +110,8 @@ This implementation provides a complete, production-ready file import system for
   - Available fields extraction
 
 **Test Results:**
-- Total: 109 tests (87 unit + 22 integration)
-- Passed: 109
+- Total: 128 tests (100 unit + 28 integration)
+- Passed: 128
 - Failed: 0
 - All existing tests continue to pass
 
@@ -125,6 +134,8 @@ This implementation provides a complete, production-ready file import system for
 - ✅ **products.json** - Sample JSON product import
 - ✅ **products.xml** - Sample XML product import
 - ✅ **categories.json** - Sample JSON category import
+- ✅ **users.json** - Sample JSON user import
+- ✅ **users.xml** - Sample XML user import
 
 #### README Updates
 - ✅ Updated feature list
@@ -233,25 +244,36 @@ The file import system integrates with:
 
 ## Files Changed
 
-**New Files (14):**
+**New Files (17):**
 1. `src/EcomShopping.FileImport.Core/Parsers/XmlFileParser.cs`
 2. `src/EcomShopping.FileImport.Core/FileImportService.cs`
 3. `src/EcomShopping.FileImport.Core/ITableImporter.cs`
 4. `src/EcomShopping.FileImport.Core/ImportModels.cs`
 5. `src/EcomShopping.Infrastructure/Importers/ProductImporter.cs`
 6. `src/EcomShopping.Infrastructure/Importers/CategoryImporter.cs`
-7. `src/EcomShopping.Infrastructure/Services/FileImportOrchestrationService.cs`
-8. `src/EcomShopping.Application/DTOs/FileImportDto.cs`
-9. `src/EcomShopping.Web/Components/Pages/Admin/FileUploadWizard.razor`
-10. `tests/EcomShopping.UnitTests/Infrastructure/XmlFileParserTests.cs`
-11. `tests/EcomShopping.UnitTests/Infrastructure/FileImportServiceTests.cs`
-12. `docs/File-Import-Guide.md`
-13. `docs/samples/products.json`
-14. `docs/samples/products.xml`
-15. `docs/samples/categories.json`
+7. `src/EcomShopping.Infrastructure/Importers/UserImporter.cs`
+8. `src/EcomShopping.Infrastructure/Services/FileImportOrchestrationService.cs`
+9. `src/EcomShopping.Application/DTOs/FileImportDto.cs`
+10. `src/EcomShopping.Web/Components/Pages/Admin/FileUploadWizard.razor`
+11. `tests/EcomShopping.UnitTests/Infrastructure/XmlFileParserTests.cs`
+12. `tests/EcomShopping.UnitTests/Infrastructure/FileImportServiceTests.cs`
+13. `tests/EcomShopping.UnitTests/Infrastructure/UserImporterTests.cs`
+14. `docs/File-Import-Guide.md`
+15. `docs/samples/products.json`
+16. `docs/samples/products.xml`
+17. `docs/samples/categories.json`
+18. `docs/samples/users.json`
+19. `docs/samples/users.xml`
 
-**Modified Files (7):**
+**Modified Files (8):**
 1. `src/EcomShopping.API/Controllers/FileImportController.cs`
+2. `src/EcomShopping.API/Program.cs`
+3. `src/EcomShopping.Infrastructure/EcomShopping.Infrastructure.csproj`
+4. `src/EcomShopping.Web/Components/Pages/Admin/Imports.razor`
+5. `src/EcomShopping.Web/Services/FileImportApiService.cs`
+6. `tests/EcomShopping.UnitTests/EcomShopping.UnitTests.csproj`
+7. `README.md`
+8. `FILE_IMPORT_IMPLEMENTATION.md`
 2. `src/EcomShopping.API/Program.cs`
 3. `src/EcomShopping.Infrastructure/EcomShopping.Infrastructure.csproj`
 4. `src/EcomShopping.Web/Components/Pages/Admin/Imports.razor`
@@ -262,8 +284,8 @@ The file import system integrates with:
 ## Testing Performed
 
 ✅ **Build**: Successful (0 warnings, 0 errors)
-✅ **Unit Tests**: 87 tests passed
-✅ **Integration Tests**: 22 tests passed
+✅ **Unit Tests**: 100 tests passed
+✅ **Integration Tests**: 28 tests passed
 ✅ **Code Review**: 3 issues identified and resolved
 ✅ **Security Scan**: 0 vulnerabilities (CodeQL)
 
