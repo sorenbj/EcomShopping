@@ -289,6 +289,37 @@ The file import system integrates with:
 ✅ **Code Review**: 3 issues identified and resolved
 ✅ **Security Scan**: 0 vulnerabilities (CodeQL)
 
+## Bug Fixes
+
+### December 2024 - FileUploadWizard JavaScript Error Fix
+
+**Issue:** Users were experiencing a JavaScript error when attempting to import files:
+```
+Cannot read properties of null (reading '_blazorFilesById')
+```
+
+**Root Cause:** The FileUploadWizard component was attempting to read the IBrowserFile stream twice:
+1. First read in `UploadFile()` for data preview
+2. Second read in `CompleteImport()` for actual import
+
+In Blazor, the JavaScript interop file reference becomes invalid after the first stream read, causing the error on subsequent attempts.
+
+**Solution:** Modified the workflow to use a single-step upload-and-import process:
+- Changed from two-step preview-then-import to direct upload-and-import
+- Updated UI to show import results instead of data preview
+- Added type alias to resolve ImportResultDto naming conflict
+- Removed unused `GoBack()` method
+
+**Files Changed:**
+- `src/EcomShopping.Web/Components/Pages/Admin/FileUploadWizard.razor`
+
+**Testing:**
+- ✅ Build successful (0 warnings, 0 errors)
+- ✅ All 128 tests passing (100 unit + 28 integration)
+- ✅ CodeQL security scan: 0 alerts
+
+**Impact:** The import process is now more streamlined - users select a file and table, click "Import File" once, and see results immediately.
+
 ## Conclusion
 
 This implementation provides a complete, extensible, and secure file import system that:

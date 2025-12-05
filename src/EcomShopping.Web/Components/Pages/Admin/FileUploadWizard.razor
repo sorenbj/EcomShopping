@@ -1,4 +1,5 @@
 @using EcomShopping.Application.DTOs
+@using ImportResultDto = EcomShopping.Web.Services.ImportResultDto
 @using Microsoft.AspNetCore.Components.Forms
 @inject FileImportApiService ImportApi
 @inject IJSRuntime JSRuntime
@@ -10,11 +11,11 @@
                 <h5 class="modal-title">
                     @if (currentStep == 1)
                     {
-                        <text>Step 1: Select File</text>
+                        <text>Import File</text>
                     }
                     else if (currentStep == 2)
                     {
-                        <text>Step 2: Preview Data</text>
+                        <text>Import Results</text>
                     }
                 </h5>
                 <button type="button" class="btn-close" @onclick="OnClose"></button>
@@ -53,78 +54,71 @@
                         </div>
                     }
                 }
-                else if (currentStep == 2 && uploadResult != null)
+                else if (currentStep == 2 && importResult != null)
                 {
-                    <div class="alert alert-success">
-                        <strong>File uploaded successfully!</strong><br/>
-                        Total records: @uploadResult.TotalRecords
-                    </div>
+                    @if (importResult.SuccessfulRecords > 0)
+                    {
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading"><i class="bi bi-check-circle"></i> Import Completed Successfully!</h6>
+                            <hr/>
+                            <p class="mb-0">
+                                <strong>File:</strong> @importResult.FileName<br/>
+                                <strong>Total Records:</strong> @importResult.TotalRecords<br/>
+                                <strong>Successful:</strong> @importResult.SuccessfulRecords<br/>
+                                <strong>Failed:</strong> @importResult.FailedRecords<br/>
+                                <strong>Duration:</strong> @importResult.DurationSeconds.ToString("F2") seconds
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Import Completed with Errors</h6>
+                            <hr/>
+                            <p>
+                                <strong>File:</strong> @importResult.FileName<br/>
+                                <strong>Total Records:</strong> @importResult.TotalRecords<br/>
+                                <strong>Successful:</strong> @importResult.SuccessfulRecords<br/>
+                                <strong>Failed:</strong> @importResult.FailedRecords
+                            </p>
+                        </div>
+                    }
 
-                    <h6>Available Fields:</h6>
-                    <div class="mb-3">
-                        @foreach (var field in uploadResult.AvailableFields)
-                        {
-                            <span class="badge bg-secondary me-1 mb-1">@field</span>
-                        }
-                    </div>
-
-                    <h6>Data Preview (first 5 records):</h6>
-                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-sm table-bordered">
-                            <thead class="table-light">
-                                <tr>
-                                    @foreach (var field in uploadResult.AvailableFields)
-                                    {
-                                        <th>@field</th>
-                                    }
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var record in uploadResult.PreviewRecords)
+                    @if (importResult.Errors.Any())
+                    {
+                        <h6>Errors:</h6>
+                        <div class="alert alert-danger" style="max-height: 300px; overflow-y: auto;">
+                            <ul class="mb-0">
+                                @foreach (var error in importResult.Errors)
                                 {
-                                    <tr>
-                                        @foreach (var field in uploadResult.AvailableFields)
-                                        {
-                                            <td>
-                                                @if (record.ContainsKey(field))
-                                                {
-                                                    @record[field]
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">-</span>
-                                                }
-                                            </td>
-                                        }
-                                    </tr>
+                                    <li>@error</li>
                                 }
-                            </tbody>
-                        </table>
-                    </div>
+                            </ul>
+                        </div>
+                    }
                 }
             </div>
             <div class="modal-footer">
                 @if (currentStep == 1)
                 {
                     <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="UploadFile" disabled="@(selectedFile == null || string.IsNullOrEmpty(selectedTable) || isUploading)">
+                    <button type="button" class="btn btn-primary" @onclick="UploadAndImportFile" disabled="@(selectedFile == null || string.IsNullOrEmpty(selectedTable) || isUploading)">
                         @if (isUploading)
                         {
                             <span class="spinner-border spinner-border-sm me-1"></span>
-                            <text>Uploading...</text>
+                            <text>Importing...</text>
                         }
                         else
                         {
                             <i class="bi bi-upload"></i>
-                            <text> Upload & Preview</text>
+                            <text> Import File</text>
                         }
                     </button>
                 }
                 else if (currentStep == 2)
                 {
-                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Back</button>
-                    <button type="button" class="btn btn-success" @onclick="CompleteImport">
-                        <i class="bi bi-check-circle"></i> Complete Import
+                    <button type="button" class="btn btn-primary" @onclick="CompleteImport">
+                        <i class="bi bi-check-circle"></i> Done
                     </button>
                 }
             </div>
@@ -145,7 +139,7 @@
     private string errorMessage = string.Empty;
     private bool isUploading = false;
     private List<ImportTableInfoDto> availableTables = new();
-    private FileUploadResultDto? uploadResult;
+    private ImportResultDto? importResult;
 
     protected override async Task OnInitializedAsync()
     {
@@ -164,7 +158,7 @@
         errorMessage = string.Empty;
     }
 
-    private async Task UploadFile()
+    private async Task UploadAndImportFile()
     {
         if (selectedFile == null || string.IsNullOrEmpty(selectedTable))
         {
@@ -179,20 +173,24 @@
             StateHasChanged();
 
             using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB max
-            uploadResult = await ImportApi.UploadFileAsync(stream, selectedFile.Name, selectedTable, "Admin");
+            importResult = await ImportApi.UploadAndImportFileAsync(
+                stream, 
+                selectedFile.Name, 
+                selectedTable, 
+                "Admin");
 
-            if (uploadResult != null)
+            if (importResult != null)
             {
                 currentStep = 2;
             }
             else
             {
-                errorMessage = "Failed to upload file. Please try again.";
+                errorMessage = "Failed to upload and import file. Please try again.";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error uploading file: {ex.Message}";
+            errorMessage = $"Error uploading and importing file: {ex.Message}";
         }
         finally
         {
@@ -201,57 +199,11 @@
         }
     }
 
-    private void GoBack()
-    {
-        currentStep = 1;
-        uploadResult = null;
-    }
-
     private async Task CompleteImport()
     {
-        if (uploadResult != null && selectedFile != null)
+        if (importResult != null)
         {
-            try
-            {
-                isUploading = true;
-                errorMessage = string.Empty;
-                StateHasChanged();
-
-                // Re-open the file and execute import
-                using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-                var result = await ImportApi.UploadAndImportFileAsync(
-                    stream, 
-                    selectedFile.Name, 
-                    selectedTable, 
-                    "Admin");
-
-                if (result != null)
-                {
-                    if (result.SuccessfulRecords > 0)
-                    {
-                        await OnImportComplete.InvokeAsync(result.JobId);
-                    }
-                    else
-                    {
-                        errorMessage = $"Import failed. {string.Join(", ", result.Errors.Take(3))}";
-                        StateHasChanged();
-                    }
-                }
-                else
-                {
-                    errorMessage = "Failed to import data. Please try again.";
-                    StateHasChanged();
-                }
-            }
-            catch (Exception ex)
-            {
-                errorMessage = $"Error importing data: {ex.Message}";
-                StateHasChanged();
-            }
-            finally
-            {
-                isUploading = false;
-            }
+            await OnImportComplete.InvokeAsync(importResult.JobId);
         }
     }
 }
